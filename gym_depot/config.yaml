@@ -1,0 +1,21 @@
+entrance:
+  bus_num: 5
+  duration: 3 # *ts => number of zeros in a list
+
+req_order: [2, 1, 0]   # 0: ent, 1: cs, 2:fs
+
+CS:
+  charge_time: 2  # *ts
+  charge_num: 5
+
+FS:
+  fuel_time : 1  # *ts
+  fuel_num: 2
+
+reward:
+  inst: 1
+  fail: -10
+  win: 10
+
+
+

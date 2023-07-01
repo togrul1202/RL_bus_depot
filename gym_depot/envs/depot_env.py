@@ -1,5 +1,6 @@
 import numpy as np
 import pygame
+import os
 
 import gymnasium as gym
 from gymnasium import spaces
@@ -12,31 +13,22 @@ rng = np.random.default_rng()
 class DepotEnv(gym.Env):
 
     def __init__(self, render_mode=None):
-        self.observation_space = spaces.MultiDiscrete([[9, 10, 10, 10, 10, 10, 10, 10, 9]])
-        self.action_space = spaces.Discrete(7)
 
-        # TODO: get values from config.yaml
-        self.bus_num = 5
-        self.dur = 3
-        self.charge = 2     # charging time
-        self.fuel = 1       # fueling time
-        self.cs_num = 5
-        self.fs_num = 2
-        self.req_order = [2, 1, 0]
-        self.seed = 39
+        self.observation_space = spaces.Box(low=0, high=value, shape=(shape,), dtype=int)
+        self.action_space = spaces.Discrete(total_st)
 
-        self.av = np.zeros(7)
-        self.td = np.zeros(8)
-        self.ts = np.zeros(8)
-        self.req = 8
+        self.av = np.zeros(total_st)
+        self.td = np.zeros(total)
+        self.ts = np.zeros(total)
+        self.req = total
         self.ent = 0
-        self.cs = np.zeros(5)
-        self.fs = np.zeros(2)
-        self.ent_config = ent_array(self.bus_num, self.dur, self.seed)
+        self.cs = np.zeros(cs_num)
+        self.fs = np.zeros(fs_num)
+        self.ent_config = np.zeros(len(ent_array())).tolist()
 
     def _get_obs(self):
         obs = np.hstack([self.ent, self.cs, self.fs, self.req])
-        obs = np.array([obs])
+        obs = np.array(obs, dtype=int)
         return obs
 
     def _get_info(self):
@@ -45,64 +37,73 @@ class DepotEnv(gym.Env):
     def _get_state(self):
         if self.req == 0:
             state_info = self.ent
-        elif self.req <= 5 and self.req != 0:
+        elif self.req <= cs_num and self.req != 0:
             state_info = self.cs[self.req-1]
-        elif self.req > 5 and self.req != 8:
-            state_info = self.fs[self.req-6]
+        elif self.req > cs_num and self.req != total:
+            state_info = self.fs[self.req-(cs_num+1)]
         else:
             state_info = 0
         return state_info
 
     def _goto(self, station):
-        if station <= 4:
+        if station < cs_num:
             cs_assign = station
             self.cs[cs_assign] = self._get_state()
         else:
             fs_assign = station
-            self.fs[fs_assign-5] = self._get_state()
+            self.fs[fs_assign-cs_num] = self._get_state()
 
         if self.req == 0:
             self.ent = 0
-        elif self.req != 0 and self.req <= 5:
+        elif self.req != 0 and self.req <= cs_num:
             cs_reset = self.req
             self.cs[cs_reset-1] = 0
-        elif self.req > 5 and self.req != 8:
+        elif self.req > cs_num and self.req != total:
             fs_reset = self.req
-            self.fs[fs_reset-6] = 0
-        self.req = 8
+            self.fs[fs_reset-(cs_num+1)] = 0
+        self.req = total
 
     def _wrong_dec(self):
         self.ent = 0
-        self.cs = np.zeros(5)
-        self.fs = np.zeros(2)
-        self.req = 8
+        self.cs = np.zeros(cs_num)
+        self.fs = np.zeros(fs_num)
+        self.req = total
+
+    def _get_delay(self):
+        delay = 0
+        for idx, val in enumerate(self.td):
+            delay += int(val / time_delay)
+        return delay
 
     def _get_reward(self, r):
-        if sum(self.td):
-            print(self.td)
-        rew = r - sum(self.td)
-        self.td = np.zeros(8)
+        #if sum(self.td):
+            #print(self.td)
+        delay = self._get_delay()
+        rew = r - delay
+        self.td = np.zeros(total)
         return rew
 
     def _get_inst_rew(self, action):
-        if (self.req == 0 or (action < 5 and self.req > 5) or
-                (action >= 5 and self.req <= 5 and self.req !=0)):
-            r = 1
+        num = cs_num
+        if (self.req == 0 or (action < num and self.req > num) or
+                (action >= num and self.req <= num and self.req != 0)):
+            r = inst
         else:
             r = 0
         return r
 
     def _check_termination(self, action):
+        num = cs_num
         rew = 0
         done = False
         if (self.av[action] != 0 or                                   # crash action
-            (action < 5 and self.req <= 5 and self.req != 0) or       # same cs action
-            (action >= 5 and self.req > 5)):                          # same fs action
-            rew = -10
+            (action < num and self.req <= num and self.req != 0) or       # same cs action
+            (action >= num and self.req > num)):                          # same fs action
+            rew = fail
             done = True
             self._wrong_dec()
-        elif self.req == 8 and sum(self.cs) == 45:
-            rew = 10
+        elif self.req == total and sum(self.cs) == 9*cs_num:
+            rew = win
             done = True
             self._goto(action)
         return rew, done
@@ -110,24 +111,24 @@ class DepotEnv(gym.Env):
     def _check_entrance(self):
         if len(self.ent_config):
             if self.ent_config[0]:
-                self.ent_config, self.ent = ent_update(self.ent_config, self.ent, self.td, self.seed)
+                self.ent_config, self.ent = ent_update(self.ent_config, self.ent, self.td)
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
-        self.av = np.zeros(7)
-        self.td = np.zeros(8)
-        self.ts = np.zeros(8)
-        self.req = 8
+        self.av = np.zeros(total_st)
+        self.td = np.zeros(total)
+        self.ts = np.zeros(total)
+        self.req = total
         self.ent = 0
-        self.cs = np.zeros(5)
-        self.fs = np.zeros(2)
-        self.ent_config = ent_array(self.bus_num, self.dur, self.seed)
-        self.ent_config, self.ent = ent_update(self.ent_config, self.ent, self.td, self.seed)
+        self.cs = np.zeros(cs_num)
+        self.fs = np.zeros(fs_num)
+        self.ent_config = ent_array()
+        self.ent_config, self.ent = ent_update(self.ent_config, self.ent, self.td)
         if self.ent:
             self.req = 0
             observation = self._get_obs()
             info = self._get_info()
-            print(self.ent_config)
+            #print(self.ent_config)
             return observation, info
 
     def step(self, action):
@@ -142,17 +143,17 @@ class DepotEnv(gym.Env):
             self.av = av_state(self.av, self.cs, self.fs)
             # self.av_state()
             # perform the updates(ent_config, cl, fl) and get the next request
-            while self.req == 8:
+            while self.req == total:
                 self._check_entrance()
                 (self.req, self.ent, self.ent_config, self.cs, self.fs, self.ts,
-                 self.td) = update(self.req_order, self.req, self.av, self.ent, self.ent_config, self.cs, self.fs,
-                                   self.ts, self.td, self.charge,self.fuel, self.seed)
-                if self.req == 8 and sum(self.cs) == 45:
-                    reward = 10
+                 self.td) = update(self.req, self.av, self.ent, self.ent_config, self.cs, self.fs, self.ts, self.td)
+                if self.req == total and sum(self.cs) == 9*cs_num:
+                    reward = win
                     terminated = True
+                    print('success')
                     break
-                elif self.req == 8:
-                    print('1 ts passed')
+                #elif self.req == self.total:
+                    #print('1 ts passed')
             if not terminated:
                 reward = self._get_reward(r)
                 print(self.ent_config)

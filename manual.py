@@ -1,5 +1,6 @@
 import gymnasium
 import gym_depot
+from gym_depot.utils import *
 
 
 def get_act(obs, n=0):
@@ -12,24 +13,25 @@ def get_act(obs, n=0):
 
 
 if __name__ == "__main__":
+    cs_num = params['cs_num']
     env = gymnasium.make('BusDepot-v0')
     a = env.reset()
     obs = a[0]
     tot_rew = 0
-    print(a)
-    req = obs[0][-1]
+    print(obs)
+    req = obs[-1]
 
     while True:
         if req == 0:
-            action = get_act(obs[0][1:-1])
-        elif req <= 5:
-            action = get_act(obs[0][6:-1], n=5)
+            action = get_act(obs[1:-1])
+        elif req <= cs_num:
+            action = get_act(obs[cs_num+1:-1], n=cs_num)
         else:
-            action = get_act(obs[0][1:6])
+            action = get_act(obs[1:cs_num+1])
         print(action)
         observation, reward, terminated, truncated, info = env.step(action)
         obs = observation
-        req = obs[0][-1]
+        req = obs[-1]
         tot_rew += reward
         print(observation, reward)
         if terminated or truncated:

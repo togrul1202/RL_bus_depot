@@ -6,8 +6,8 @@ import gym_depot
 
 env = gymnasium.make('BusDepot-v0')
 a = env.reset()
-# obs = a[0]
-# print(obs[0][6:-1])
+obs = a[0]
+print(f'obs:{obs}')
 i = 0
 while True:
     action = env.action_space.sample()

@@ -3,27 +3,21 @@ import gym_depot
 from gym_depot.utils import *
 
 
-def get_act(obs, n=0, inter=0):
-    action = None
+def get_act(obs, n=0):
+    action = 0
+    obs = np.flip(obs)
     for idx, ob in enumerate(obs):
         if not ob:
-            if action != None:
-                if idx == action+1:
-                    break
-            action = idx + n
-            if action < interlock and not action % 2:
-                continue
+            action = (obs.size-1) -idx + n
             break
     return action
 
 
-def req_act(req, obs):
+def req_act_inv(req, obs):
     if req == 0:
         action = get_act(obs[1:-1])
     elif req <= cs_num:
         action = get_act(obs[cs_num + 1:-1], n=cs_num)
-        if action == None:
-            action = req-2
     else:
         action = get_act(obs[1:cs_num + 1])
     return action
@@ -32,14 +26,15 @@ def req_act(req, obs):
 if __name__ == "__main__":
     cs_num = params['cs_num']
     env = gymnasium.make('BusDepot-v0')
-    obs, _ = env.reset(seed=12)
+    obs, _ = env.reset(seed=783)
     tot_rew = 0
     print(obs)
     req = obs[-1]
     number = 0
+
     while True:
         number += 1
-        action = req_act(req, obs)
+        action = env.action_space.sample()
         print(f'action: {action}')
         observation, reward, terminated, truncated, info = env.step(action)
         obs = observation
@@ -48,10 +43,10 @@ if __name__ == "__main__":
         print(observation, reward)
         if terminated or truncated:
             print(f'number: {number}')
-            print(info.get('info'))
+            print(info)
             break
 
-    print(f'total reward: {tot_rew}')
+    print(tot_rew)
 
     env.close()
 

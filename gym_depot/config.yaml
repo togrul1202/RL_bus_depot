@@ -1,31 +1,31 @@
 # entrance:
-bus_num: 15
+bus_num: 25
 random: True                      # if True: random initial state
 seed: 39                           # when random is False
 
 # request:
-req_order: [2, 0, 1]              # 0: ent, 1: cs, 2:fs
-interlock: false
+req_order: [0, 1, 2]              # 0: ent, 1: cs, 2:fs
+interlock: 24
 
 # CS:
-cs_num: 15
+cs_num: 25
 
 # FS:
 fs_num: 2
 
 # time:   time steps = minutes
-min_duration: 300                  # min number of time steps between first and last arriving bus
-max_duration: 500                # max duration
+min_duration: 360                  # min number of time steps between first and last arriving bus
+max_duration: 600                # max duration
 bus_time: 1                       # number of time steps between two simultaneously arrived buses
 charge_time: 120                 # number of time steps needed to charge to the next level
 fuel_time: 5                     # number of time steps needed to fuel to the next level
-time_delay: 2                     # number of time steps considered as delay
-travel_time: [[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-              [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-              [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]]
+time_delay: 4                     # number of time steps considered as delay
+travel_time: [[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+              [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+              [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]]
 
 # reward:
-inst: 0
+inst: 10
 fail: -100
 win: 100
 

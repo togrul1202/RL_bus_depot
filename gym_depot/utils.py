@@ -1,5 +1,6 @@
 import numpy as np
 import yaml
+import pygame
 
 
 with open('gym_depot/config.yaml') as stream:
@@ -197,17 +198,18 @@ def check_interlock(act, req, av, cs_arr, state):
     lock = False
     crash = False
     stuck = False
-    if req:
-        if req-1 % 2 and req-1 < interlock and 0 not in av[cs_num:] and act == req-2:
-            lock = True
+    if interlock:
+        if req:
+            if req-1 % 2 and req-1 < interlock and 0 not in av[cs_num:] and act == req-2:
+                lock = True
 
-    if act < interlock and not act % 2:
-        if av[act+1] and act != req-2:
-            crash = True
+        if act < interlock and not act % 2:
+            if av[act+1] and act != req-2:
+                crash = True
 
-    if act % 2 and cs_arr[act-1] and act < interlock:
-        if state < 9 and state % 3 and not cs_arr[act-1] % 3:
-            stuck = True
+        if act % 2 and cs_arr[act-1] and act < interlock:
+            if state < 9 and state % 3 and not cs_arr[act-1] % 3:
+                stuck = True
 
     return lock, crash, stuck
 

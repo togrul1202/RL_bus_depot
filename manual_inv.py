@@ -25,7 +25,7 @@ def req_act_inv(req, obs):
 
 if __name__ == "__main__":
     cs_num = params['cs_num']
-    env = gymnasium.make('BusDepot-v0')
+    env = gymnasium.make('BusDepot-v0', render_mode="human")
     obs, _ = env.reset(seed=783)
     tot_rew = 0
     print(obs)
@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     while True:
         number += 1
-        action = env.action_space.sample()
+        action = req_act_inv(req, obs)
         print(f'action: {action}')
         observation, reward, terminated, truncated, info = env.step(action)
         obs = observation

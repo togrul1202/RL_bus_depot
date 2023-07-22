@@ -123,7 +123,7 @@ class DepotEnv(gym.Env):
         crash = self.cs[action] != 0 if action < cs_num else self.fs[action-cs_num] != 0
         same_cs = action < num and self.req <= num and self.req != 0 and not lock
         same_fs = action >= num and self.req > num
-        wrong_fs = action >= num >= self.req and self.cs[self.req - 1] == 9
+        wrong_fs = action >= num >= self.req != 0 and self.cs[self.req - 1] == 9
         dic = {'same_cs': same_cs, 'same_fs': same_fs, 'crash': crash, 'lock_crash': lock_crash, 'stuck': stuck,
                'wrong_fs': wrong_fs}
         for key, val in dic.items():

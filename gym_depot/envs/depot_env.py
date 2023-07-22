@@ -163,7 +163,7 @@ class DepotEnv(gym.Env):
             self.req = 0
             observation = self._get_obs()
             info = self._get_info()
-            self.metadata["render_fps"] = 1
+            self.metadata["render_fps"] = params['render_reset']
             if self.render_mode == "human":
                 self._render_frame()
             #print(self.ent_config)
@@ -173,12 +173,12 @@ class DepotEnv(gym.Env):
         # check termination
         reward, terminated = self._check_termination(action)
         if terminated:
-            self.metadata["render_fps"] = 0.2
+            self.metadata["render_fps"] = params['render_slow']
             if self.render_mode == "human":
                 self._render_frame(action, failed=True)
 
         if not terminated:
-            self.metadata["render_fps"] = 10
+            self.metadata["render_fps"] = params['render_fast']
             if self.render_mode == "human":
                 self._render_frame(action)
             # calculate instantaneous reward
@@ -198,7 +198,7 @@ class DepotEnv(gym.Env):
                 if self.req == total and sum(self.cs) == 9*cs_num:
                     reward = win
                     terminated = True
-                    self.metadata["render_fps"] = 0.2
+                    self.metadata["render_fps"] = params['render_slow']
                     if self.render_mode == "human":
                         self._render_frame(success=True)
                     #print('success')

@@ -8,28 +8,33 @@ import gymnasium
 import gym_depot
 from stable_baselines3 import PPO, A2C
 
+from gym_depot.utils import params
 from manual import req_act
 from manual_inv import req_act_inv
 
-env = gymnasium.make('BusDepot-v0')
+if params['ev_render']:
+    env = gymnasium.make('BusDepot-v0', render_mode='human')
+else:
+    env = gymnasium.make('BusDepot-v0')
 
-result_dir = 'results/'
-name = 'models/training6/PPO-1689090430/14280000'
+result_dir = params['results_dir']
+name = params['model_path_ev']
 name_dir = Path(name)
 filename1 = 'steps-and-actions.png'                     # .svg for thesis
 filename2 = 'avg_steps-and-fail.png'
 
 if name != 'manual' and name != 'manual_inv':
-    model = PPO.load(name, env=env)
+    model_name = A2C if params['model_ev'] == 'A2C' else PPO
+    model = model_name.load(name, env=env)
     output_dir = os.path.join(result_dir, name_dir.parent.parent.name, name_dir.parent.name, name_dir.stem)
 else:
     output_dir = os.path.join(result_dir, name)
 os.makedirs(output_dir, exist_ok=True)
 
-episodes = 100
+episodes = params['episode_num']
 fail_list = np.zeros(100)
 episodes_up = episodes
-it_num = 5
+it_num = params['iteration_num']
 mean_pun_list = []
 fail_percent = []
 for it in range(it_num):
@@ -95,8 +100,10 @@ for it in range(it_num):
         fig = plt.gcf()
         filepath1 = os.path.join(output_dir, filename1)
         fig.set_size_inches(15, 7.5)
-        fig.savefig(filepath1, dpi=100)                 # .svg for thesis
-        # plt.show()
+        if params['save_graph']:
+            fig.savefig(filepath1, dpi=100)                 # .svg for thesis
+        if params['show_graph']:
+            plt.show()
 
 
 env.close()
@@ -113,7 +120,9 @@ plt.suptitle(name)
 fig = plt.gcf()
 filepath2 = os.path.join(output_dir, filename2)
 fig.set_size_inches(15, 7.5)
-fig.savefig(filepath2, dpi=100)                  # .svg for thesis
-# plt.show()
+if params['save_graph']:
+    fig.savefig(filepath2, dpi=100)                  # .svg for thesis
+if params['show_graph']:
+    plt.show()
 
-print(f'fail list: {fail_list}\nargs: {np.argwhere(fail_list==5)}')
+print(f'fail list: {fail_list}\nargs: {np.argwhere(fail_list==it_num)}')

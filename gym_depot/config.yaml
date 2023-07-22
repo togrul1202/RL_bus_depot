@@ -5,7 +5,7 @@ seed: 39                           # when random is False
 
 # request:
 req_order: [0, 1, 2]              # 0: ent, 1: cs, 2:fs
-interlock: 24
+interlock: false
 
 # CS:
 cs_num: 25
@@ -25,9 +25,29 @@ travel_time: [[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
               [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]]
 
 # reward:
-inst: 0
-fail: -10
-win: 10
+inst: 10                                 # 0 for evaluation
+fail: -100
+win: 100
 
+# render fps:
+render_reset: 1
+render_fast: 10
+render_slow: 0.2                # if fail or success
 
+# training:
+sb3_model: PPO
+training: 'training5_0.001/'
+models_dir: 'exp/models/'
+logs_dir: 'exp/logs/'
+device: cuda:1
+tr_render: False
 
+# evaluation:
+model_ev: PPO
+model_path_ev: 'models/training5/PPO-1689268753/14890000'    # model path or name of rule based methods
+results_dir: 'results/'
+episode_num: 100
+iteration_num: 5
+save_graph: False
+show_graph: False
+ev_render: False

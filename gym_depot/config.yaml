@@ -14,18 +14,18 @@ cs_num: 25
 fs_num: 2
 
 # time:   time steps = minutes
-min_duration: 360                  # min number of time steps between first and last arriving bus
-max_duration: 600                # max duration
+min_duration: 0                  # min number of time steps between first and last arriving bus
+max_duration: 10                # max duration
 bus_time: 1                       # number of time steps between two simultaneously arrived buses
 charge_time: 120                 # number of time steps needed to charge to the next level
 fuel_time: 5                     # number of time steps needed to fuel to the next level
-time_delay: 4                     # number of time steps considered as delay
+time_delay: 1                     # number of time steps considered as delay
 travel_time: [[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
               [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
               [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]]
 
 # reward:
-inst: 10                                 # 0 for evaluation
+inst: 12                                 # 0 for evaluation
 fail: -100
 win: 100
 
@@ -36,15 +36,17 @@ render_slow: 0.2                # if fail or success
 
 # training:
 sb3_model: PPO
-training: 'training5_0.001/'
-models_dir: 'exp/models/'
-logs_dir: 'exp/logs/'
+training: 'training7/'
+ent_coef: 0
+models_dir: 'rew/models/'
+logs_dir: 'rew/logs/'
 device: cuda:1
 tr_render: False
+total_steps: 3001          # in ten-thousands
 
 # evaluation:
 model_ev: PPO
-model_path_ev: 'models/training5/PPO-1689268753/14890000'    # model path or name of rule based methods
+model_path_ev: 'manual_inv'    # model path or name of rule based methods
 results_dir: 'results/'
 episode_num: 100
 iteration_num: 5

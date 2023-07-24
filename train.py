@@ -9,6 +9,8 @@ from gym_depot.utils import params
 
 sb3_model = params['sb3_model']
 training = params['training']
+ent_coef = params['ent_coef']
+tot_ts = params['total_steps']
 models_dir = params['models_dir'] + training + sb3_model + '-' + str(int(time.time()))
 log_dir = params['logs_dir'] + training + sb3_model + '-' + str(int(time.time()))
 
@@ -22,11 +24,11 @@ else:
 
 env.reset()
 model_name = A2C if sb3_model == 'A2C' else PPO
-model = model_name("MlpPolicy", env, verbose=1, tensorboard_log=log_dir, device=params['device'], ent_coef=0.001)
+model = model_name("MlpPolicy", env, verbose=1, tensorboard_log=log_dir, device=params['device'], ent_coef=ent_coef)
 
 t = time.time()
 time_steps = 10000
-for i in range(1, 1501):
+for i in range(1, tot_ts):
     model.learn(total_timesteps=time_steps, reset_num_timesteps=False, tb_log_name=sb3_model)
     model.save(f'{models_dir}/{time_steps*i}')
 print(f"Time spent : {time.time()-t:.2f}s")

@@ -22,7 +22,10 @@ class DepotEnv(gym.Env):
 
         self.info = None
         self.av = np.zeros(total_st)            # availability
+        self.av_emp = 1                         # available employees
         self.tt = np.zeros(total_st)            # travel time
+        self.tt_emp = np.zeros(total_st)        # employee in bus
+        self.emp_tt = np.zeros(total_st)        # employee travel time
         self.td = np.zeros(total)               # time delay
         self.ts = np.zeros(total)               # time step
         self.req = total                        # request
@@ -30,6 +33,8 @@ class DepotEnv(gym.Env):
         self.cs = np.zeros(cs_num)              # CS values
         self.fs = np.zeros(fs_num)              # FS values
         self.ent_config = np.zeros(len(ent_array())).tolist()
+
+        self.last_loc = np.zeros(total_st)
 
         self.req_render = total
         self.tt_render = np.zeros(total_st)
@@ -68,11 +73,13 @@ class DepotEnv(gym.Env):
         if station < cs_num:
             cs_assign = station
             self.cs[cs_assign] = self._get_state()
-            self.tt[cs_assign] = get_tt(self.req, cs_assign)
+            self.tt[cs_assign], self.tt_emp[cs_assign], self.last_loc, self.emp_tt[cs_assign] = \
+                get_tt(self.req, cs_assign, self.last_loc)
         else:
             fs_assign = station
             self.fs[fs_assign-cs_num] = self._get_state()
-            self.tt[fs_assign] = get_tt(self.req, fs_assign)
+            self.tt[fs_assign], self.tt_emp[fs_assign], self.last_loc, self.emp_tt[fs_assign] = \
+                get_tt(self.req, fs_assign, self.last_loc)
 
         # reset stations
         if not self.req:
@@ -149,7 +156,11 @@ class DepotEnv(gym.Env):
         super().reset(seed=seed)
         self.info = None
         self.av = np.zeros(total_st)
+        if emp_num:
+            self.av_emp = emp_num
         self.tt = np.zeros(total_st)
+        self.tt_emp = np.zeros(total_st)
+        self.emp_tt = np.zeros(total_st)
         self.td = np.zeros(total)
         self.td_total = 0
         self.ts = np.zeros(total)
@@ -159,6 +170,11 @@ class DepotEnv(gym.Env):
         self.fs = np.zeros(fs_num)
         self.ent_config = ent_array(seed)
         self.ent_config, self.ent = ent_update(self.ent_config, self.ent, self.td)
+
+        self.last_loc = np.zeros(total_st)
+        if emp_num:
+            self.last_loc[:emp_num] = 2          # employees at the SB
+
         if self.ent:
             self.req = 0
             observation = self._get_obs()
@@ -181,7 +197,7 @@ class DepotEnv(gym.Env):
             self.metadata["render_fps"] = params['render_fast']
             if self.render_mode == "human":
                 self._render_frame(action)
-            # calculate instantaneous reward
+            # calculate instant reward
             r = self._get_inst_rew(action)
             # calculate states from the action
             self._goto(action)
@@ -191,8 +207,8 @@ class DepotEnv(gym.Env):
             while self.req == total:
                 self._check_entrance()
                 (self.req, self.ent, self.ent_config, self.cs, self.fs, self.ts,
-                 self.td) = update(self.req, self.av, self.ent, self.ent_config, self.cs, self.fs, self.ts, self.td,
-                                   self.tt)
+                 self.td, self.tt, self.tt_emp, self.av_emp, self.emp_tt, self.last_loc) = update(self.req, self.av, self.ent, self.ent_config,
+                                                self.cs, self.fs, self.ts, self.td, self.tt, self.tt_emp, self.av_emp, self.emp_tt, self.last_loc)
                 if self.render_mode == "human":
                     self._render_frame()
                 if self.req == total and sum(self.cs) == 9*cs_num:
@@ -203,9 +219,9 @@ class DepotEnv(gym.Env):
                         self._render_frame(success=True)
                     #print('success')
                     break
-                #elif self.req == total:
-                    #print('1 ts passed')
-                    #print(f'cs: {self.cs}\nfs: {self.fs}\ntd: {self.td}')
+                # elif self.req == total:
+                #     print('1 ts passed')
+                #     print(f'cs: {self.cs}\nfs: {self.fs}\ntd: {self.td}')
             if not terminated:
                 reward = self._get_reward(r)
                 #print(self.ent_config)
@@ -214,6 +230,7 @@ class DepotEnv(gym.Env):
         # if self.render_mode == "human":
         #     self._render_frame()
         self.td = np.zeros(total)
+        # print(f'employee: {self.av_emp}\ntt: {self.tt}\nemp_tt: {self.emp_tt}')
 
         return observation, reward, terminated, False, info
 
@@ -246,7 +263,7 @@ class DepotEnv(gym.Env):
 
         # color info
         colors = ['green', 'grey', 'blue', 'yellow', 'red', 'brown']
-        color_info = ['empty', 'not arrived', 'charging/fueling', 'charging/fueling finished', 'request delayed',
+        color_info = ['empty', 'not arrived', 'charging/fueling', 'request to go', 'request delayed',
                       'charging and fueling finished']
 
         # value info
@@ -327,7 +344,7 @@ class DepotEnv(gym.Env):
         # Ent
         if self.td_render[0]:
             ent_color = red
-            ent_text = 'info: ' + str(self.ent_render) + ', delay: ' + str(self.td_render[0])
+            ent_text = 'info: ' + str(self.ent_render) + ', delay: ' + str(int(self.td_render[0]))
         elif self.ent_render:
             ent_color = yellow
             ent_text = 'info: ' + str(self.ent_render)
@@ -363,7 +380,7 @@ class DepotEnv(gym.Env):
                     cs_name += ' -> ' + self.info
             if self.td_render[idx + 1]:
                 cs_color[idx] = red
-                cs_text = cs_text + ', delay: ' + str(self.td_render[idx+1])
+                cs_text = cs_text + ', delay: ' + str(int(self.td_render[idx+1]))
             elif self.tt_render[idx]:
                 cs_color[idx] = grey
             elif val == 9:
@@ -400,7 +417,7 @@ class DepotEnv(gym.Env):
                 fs_text = ''
             if self.td_render[idx+1+cs_num]:
                 fs_color[idx] = red
-                fs_text = fs_text + ', delay: ' + str(self.td_render[idx + 1])
+                fs_text = fs_text + ', delay: ' + str(int(self.td_render[idx + cs_num + 1]))
             elif self.tt_render[idx+cs_num]:
                 fs_color[idx] = grey
             elif val % 3:
@@ -433,7 +450,7 @@ class DepotEnv(gym.Env):
                 color = red
             if success:
                 text = 'SUCCESS'
-                info = 'total waited time: ' + str(self.td_total) + ' minutes'
+                info = 'total waiting time: ' + str(self.td_total) + ' minutes'
                 color = green
             text_loc = (400, 400)
             info_loc = (400, 450)

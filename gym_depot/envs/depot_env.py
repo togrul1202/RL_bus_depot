@@ -313,6 +313,13 @@ class DepotEnv(gym.Env):
         time_surface = font.render(time, True, brown)
         screen.blit(time_surface, time_loc)
 
+        # employee
+        if emp_num:
+            emp = 'number of available employees: ' + str(self.av_emp)
+            emp_loc = (550, 320)
+            emp_surface = font.render(emp, True, brown)
+            screen.blit(emp_surface, emp_loc)
+
         # color info
         for idx, color in enumerate(colors):
             color_text = color + ': ' + color_info[idx]

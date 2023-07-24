@@ -8,7 +8,7 @@ req_order: [0, 1, 2]              # 0: ent, 1: cs, 2: fs
 interlock: false
 
 # Employee:
-emp_num: false  # int/false
+emp_num: 2  # int/false
 
 # CS:
 cs_num: 5
@@ -52,10 +52,10 @@ total_steps: 3001          # in ten-thousands
 
 # evaluation:
 model_ev: PPO
-model_path_ev: 'manual_inv'    # model path or name of rule based methods
+model_path_ev: 'manual'    # model path or name of rule based methods
 results_dir: 'results/'
 episode_num: 100
 iteration_num: 5
 save_graph: False
 show_graph: False
-ev_render: False
+ev_render: True

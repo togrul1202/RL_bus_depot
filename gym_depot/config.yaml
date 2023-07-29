@@ -31,9 +31,11 @@ emp_time:   [[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 
               [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]]  # emp travel from SB to a station
 
 # reward:
-inst: 0                                 # 0 for evaluation
+inst: 12                                 # 0 for evaluation
 fail: -100
 win: 100
+repeat: 0
+repeat_per_action: False
 
 # render fps:
 render_reset: 1
@@ -52,10 +54,10 @@ total_steps: 3001          # in ten-thousands
 
 # evaluation:
 model_ev: PPO
-model_path_ev: 'manual'    # model path or name of rule based methods
+model_path_ev: 'D:/home/uvijv/RL_bus_depot/models/training5/PPO-1689268753/14890000'    # model path or name of rule based methods
 results_dir: 'results/'
 episode_num: 100
 iteration_num: 5
 save_graph: False
-show_graph: False
-ev_render: True
+show_graph: True
+ev_render: False

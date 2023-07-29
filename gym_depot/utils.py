@@ -35,6 +35,8 @@ travel_time = params['travel_time']
 interlock = params['interlock']
 emp_num = params['emp_num']
 emp_time = params['emp_time']
+rep_num = params['repeat']
+rep_per_action = params['repeat_per_action']
 
 
 def ent_array(ev_seed=None):

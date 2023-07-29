@@ -7,7 +7,7 @@ from statistics import mean
 import gymnasium
 import gym_depot
 
-env = gymnasium.make('BusDepot-v0', render_mode="human")
+env = gymnasium.make('BusDepot-v0', render_mode='human')
 obs, _ = env.reset()
 i = 0
 while True:
@@ -15,7 +15,7 @@ while True:
     action = env.action_space.sample()
     print(action)
     observation, reward, terminated, truncated, info = env.step(action)
-    print(observation, reward)
+    print(observation, reward, info)
     if terminated or truncated:
         i += 1
         if i == 2:

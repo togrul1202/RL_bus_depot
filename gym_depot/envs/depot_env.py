@@ -21,6 +21,7 @@ class DepotEnv(gym.Env):
         self.action_space = spaces.Discrete(total_st)
 
         self.info = None
+        self.ter_num = 0
         self.av = np.zeros(total_st, dtype=int)            # availability
         self.av_emp = 1                         # available employees
         self.tt = np.zeros(total_st, dtype=int)            # travel time
@@ -131,6 +132,7 @@ class DepotEnv(gym.Env):
         num = cs_num
         rew = 0
         done = False
+        repeat = False
         state = self._get_state()
         lock, lock_crash, stuck = check_interlock(action, self.req, self.av, self.cs, state)
         crash = self.cs[action] != 0 if action < cs_num else self.fs[action-cs_num] != 0
@@ -145,9 +147,13 @@ class DepotEnv(gym.Env):
                 break
         if crash or same_cs or same_fs or lock_crash or stuck or wrong_fs:
             rew = fail
-            done = True
-            self._wrong_dec()
-        return rew, done
+            if self.ter_num < rep_num:
+                self.ter_num += 1
+                repeat = True
+            else:
+                done = True
+                self._wrong_dec()
+        return rew, done, repeat
 
     def _check_entrance(self):
         if len(self.ent_config):
@@ -157,6 +163,7 @@ class DepotEnv(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         self.info = None
+        self.ter_num = 0
         self.av = np.zeros(total_st, dtype=int)
         if emp_num:
             self.av_emp = emp_num
@@ -189,12 +196,13 @@ class DepotEnv(gym.Env):
 
     def step(self, action):
         # check termination
-        reward, terminated = self._check_termination(action)
-        if terminated:
+        reward, terminated, repeat = self._check_termination(action)
+        if terminated or repeat:
             self.metadata["render_fps"] = params['render_slow']
             if self.render_mode == "human":
                 self._render_frame(action, failed=True)
         else:
+            self.info = None
             self.metadata["render_fps"] = params['render_fast']
             if self.render_mode == "human":
                 self._render_frame(action)
@@ -225,6 +233,7 @@ class DepotEnv(gym.Env):
                 #     print(f'cs: {self.cs}\nfs: {self.fs}\ntd: {self.td}')
             if not terminated:
                 reward = self._get_reward(r)
+                self.ter_num -= 1 if self.ter_num and rep_per_action else 0
                 #print(self.ent_config)
         observation = self._get_obs()
         info = self._get_info()

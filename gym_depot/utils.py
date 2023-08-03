@@ -94,25 +94,36 @@ def ent_update(ent_config, ent, td):
 
 def cs_update(cs_arr, ts, tt, tt_emp, av_emp, emp_tt):
     for idx, cs in enumerate(cs_arr):
+        emp_in = False
         if emp_tt[idx] < 0:                                         # waiting for employee
             continue
         elif tt[idx] or tt_emp[idx]:                                 # TODO: add emp_time
             if tt_emp[idx] == tt[idx] != 0:                        # employee in a bus
+                emp_in = True
                 tt_emp[idx] -= 1
                 if not tt_emp[idx] and cs_arr[idx]:
                     av_emp += 1
             if idx < interlock and not idx % 2:
                 if not (tt[idx+1] and not cs_arr[idx+1]):
+                    if not tt[idx] or tt_emp[idx] < 0:
+                        print(tt_emp[idx])
                     tt[idx] -= 1
                 else:                                            # on travel request: no extra waiting for next station
                     tt[idx] = tt[idx+1]
                     tt[idx+1] = 0
-                    tt_emp[idx+1] = tt[idx+1]
+                    if emp_num:
+                        tt_emp[idx + 1] = tt[idx + 1]
+                        if emp_in:
+                            tt_emp[idx] = tt[idx]
+                            tt_emp[idx] -= 1
+                        if not tt_emp[idx] and cs_arr[idx]:
+                            av_emp += 1
+                    if not tt[idx] or tt_emp[idx] < 0:
+                        print(tt_emp[idx])
                     tt[idx] -= 1
-                    tt_emp[idx] -= 1
-                    if not tt_emp[idx] and cs_arr[idx]:
-                        av_emp += 1
             else:
+                if not tt[idx] or tt_emp[idx] < 0:
+                    print(tt_emp[idx])
                 tt[idx] -= 1
             ts[idx + 1] = 0
         else:

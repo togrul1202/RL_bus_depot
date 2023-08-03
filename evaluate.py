@@ -6,7 +6,9 @@ from statistics import mean
 
 import gymnasium
 import gym_depot
+from gym_depot.envs.depot_env import DepotEnv
 from stable_baselines3 import PPO, A2C
+from sb3_contrib.ppo_mask import MaskablePPO
 
 from gym_depot.utils import params
 from manual import req_act
@@ -24,7 +26,13 @@ filename1 = 'steps-and-actions.png'                     # .svg for thesis
 filename2 = 'avg_steps-and-fail.png'
 
 if name != 'manual' and name != 'manual_inv':
-    model_name = A2C if params['model_ev'] == 'A2C' else PPO
+    model_name = Path(name).parent.name.split('-')[0]
+    if model_name == 'A2C':
+        model_name = A2C
+    elif model_name == 'PPO':
+        model_name = PPO
+    elif model_name == 'MPPO':
+        model_name = MaskablePPO
     model = model_name.load(name, env=env)
     output_dir = os.path.join(result_dir, name_dir.parent.parent.name, name_dir.parent.name, name_dir.stem)
 else:
@@ -33,18 +41,18 @@ os.makedirs(output_dir, exist_ok=True)
 
 episodes = params['episode_num']
 fail_list = np.zeros(100)
-episodes_up = episodes
 it_num = params['iteration_num']
 mean_pun_list = []
 fail_percent = []
 for it in range(it_num):
+    episodes_up = episodes
     tot_rew = 0
     rew_diff = []
     act_number = []
     rew = []
     seed = 1
     fail = 0
-    dic = {'same_cs': 0, 'same_fs': 0, 'crash': 0, 'lock_crash': 0, 'stuck': 0, 'wrong_fs': 0}
+    dic = {'no_valid_action': 0, 'same_cs': 0, 'same_fs': 0, 'crash': 0, 'lock_crash': 0, 'stuck': 0, 'wrong_fs': 0}
     for episode in range(episodes):
         obs, _ = env.reset(seed=seed)
         req = obs[-1]
@@ -55,6 +63,9 @@ for it in range(it_num):
                 action = req_act(req, obs)
             elif name == 'manual_inv':
                 action = req_act_inv(req, obs)
+            elif params['ev_mask']:
+                mask = env.get_action_mask()
+                action, _ = model.predict(obs, action_masks=mask)
             else:
                 action, _ = model.predict(obs)
             #print(f'action:{action}')

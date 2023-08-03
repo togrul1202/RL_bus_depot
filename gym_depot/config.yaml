@@ -1,11 +1,11 @@
 # entrance:
 bus_num: 25
 random: True                      # if True: random initial state
-seed: 39                           # when random is False
+seed: 19                           # when random is False
 
 # request:
 req_order: [0, 1, 2]              # 0: ent, 1: cs, 2: fs
-interlock: false
+interlock: 0
 
 # Employee:
 emp_num: 0  # int/false
@@ -31,7 +31,7 @@ emp_time:   [[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 
               [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]]  # emp travel from SB to a station
 
 # reward:
-inst: 12                                 # 0 for evaluation
+inst: 0                                 # 0 for evaluation
 fail: -100
 win: 100
 repeat: 0
@@ -39,25 +39,26 @@ repeat_per_action: False
 
 # render fps:
 render_reset: 1
-render_fast: 1
+render_fast: 100
 render_slow: 0.2                # if fail or success
 
 # training:
-sb3_model: PPO
-training: 'training7/'
+sb3_model: MPPO                  # MaskablePPO = MPPO
+mask: True                      # must be false unless model is MPPO
+training: 'training5/'
 ent_coef: 0
-models_dir: 'rew/models/'
-logs_dir: 'rew/logs/'
+models_dir: 'models/'
+logs_dir: 'logs/'
 device: cuda:1
 tr_render: False
-total_steps: 3001          # in ten-thousands
+total_steps: 310          # * ten-thousand steps
 
 # evaluation:
-model_ev: PPO
-model_path_ev: 'D:/home/uvijv/RL_bus_depot/models/training5/PPO-1689268753/14890000'    # model path or name of rule based methods
+model_path_ev: 'models/training4/MPPO-1691059515/500000'    # model path or name of rule based models
+ev_mask: True                                              # must be false unless model is MPPO
 results_dir: 'results/'
 episode_num: 100
 iteration_num: 5
 save_graph: False
-show_graph: True
+show_graph: False
 ev_render: False

@@ -35,6 +35,7 @@ class DepotEnv(gym.Env):
         self.fs = np.zeros(fs_num, dtype=int)              # FS values
         self.ent_config = np.zeros(len(ent_array())).tolist()
 
+        self.mask_fail = False
         self.last_loc = np.zeros(total_st)
 
         self.req_render = total
@@ -139,14 +140,14 @@ class DepotEnv(gym.Env):
         same_cs = action < num and self.req <= num and self.req != 0 and not lock and self.cs[self.req - 1] != 9    # even if there is av fs value 9 doesnt lead same_cs
         same_fs = action >= num and self.req > num
         wrong_fs = action >= num >= self.req != 0 and self.cs[self.req - 1] == 9    # wrong fs iff cs value is 9
-        dic = {'same_cs': same_cs, 'same_fs': same_fs, 'crash': crash, 'lock_crash': lock_crash, 'stuck': stuck,
-               'wrong_fs': wrong_fs}
+        dic = {'no_valid_action': self.mask_fail, 'same_cs': same_cs, 'same_fs': same_fs, 'crash': crash,
+               'lock_crash': lock_crash, 'stuck': stuck, 'wrong_fs': wrong_fs}
         for key, val in dic.items():
             if val:
                 self.info = key
                 break
-        if crash or same_cs or same_fs or lock_crash or stuck or wrong_fs:
-            rew = fail
+        if self.mask_fail or crash or same_cs or same_fs or lock_crash or stuck or wrong_fs:
+            rew = fail - self._get_delay()
             if self.ter_num < rep_num:
                 self.ter_num += 1
                 repeat = True
@@ -180,6 +181,7 @@ class DepotEnv(gym.Env):
         self.ent_config = ent_array(seed)
         self.ent_config, self.ent = ent_update(self.ent_config, self.ent, self.td)
 
+        self.mask_fail = False
         self.last_loc = np.zeros(total_st, dtype=int)
         if emp_num:
             self.last_loc[:emp_num] = 2          # employees at the SB
@@ -195,6 +197,8 @@ class DepotEnv(gym.Env):
             return observation, info
 
     def step(self, action):
+        step = 0
+        truncated = False
         # check termination
         reward, terminated, repeat = self._check_termination(action)
         if terminated or repeat:
@@ -214,6 +218,15 @@ class DepotEnv(gym.Env):
             self.av = av_state(self.av, self.cs, self.fs)
             # perform the updates(ent_config, cl, fl) and get the next request
             while self.req == total:
+                if step >= 10000:
+                    truncated = True
+                    reward = fail
+                    print('truncated')
+                    print(f'tt: {self.tt}')
+                    break
+                else:
+                    truncated = False
+                    step += 1
                 self._check_entrance()
                 (self.req, self.av, self.ent, self.ent_config, self.cs, self.fs, self.ts,
                  self.td, self.tt, self.tt_emp, self.av_emp, self.emp_tt) = update(self.req, self.av, self.ent, self.ent_config,
@@ -242,13 +255,42 @@ class DepotEnv(gym.Env):
         self.td = np.zeros(total, dtype=int)
         # print(f'employee: {self.av_emp}\ntt: {self.tt}\nemp_tt: {self.emp_tt}')
 
-        return observation, reward, terminated, False, info
+        return observation, reward, terminated, truncated, info
+
+    def get_action_mask(self):
+        array = np.array([[self.check_action_validity(a) for a in range(total_st)]])
+        if not array.any():
+            self.mask_fail = True
+            array = np.array([[True for a in range(total_st)]])
+        return array
+
+    def check_action_validity(self, action):
+        obs = self._get_obs()
+        state = self._get_state()
+        lock, lock_crash, stuck = check_interlock(action, self.req, self.av, self.cs, state)
+        wrong_fs = action >= cs_num >= self.req != 0 and self.cs[self.req - 1] == 9
+        if obs[action + 1]:
+            return False                                    # avoid crash
+        if lock_crash:
+            return False
+        if stuck:
+            return False
+        if not self.req:
+            return True
+        elif self.req <= cs_num and action < cs_num and not lock and self.cs[self.req - 1] != 9:
+            return False                                    # avoid same_cs
+        elif self.req > cs_num and action >= cs_num:
+            return False                                    # avoid same_fs
+        elif wrong_fs:
+            return False
+        else:
+            return True
 
     def render(self):
         if self.render_mode == "rgb_array":
             return self._render_frame()
 
-    def _render_frame(self, action=None, failed=False, success=False):
+    def _render_frame(self, action=None, failed=False, success=False, check=False):
 
         size = (800, 800)
         # colors
@@ -303,11 +345,11 @@ class DepotEnv(gym.Env):
         fs_text_loc = [(220, 750), (35, 435)]
         fs_name_loc = [(220, 767), (55, 467)]
 
-        if self.window is None and self.render_mode == "human":
+        if self.window is None and (self.render_mode == "human" or check):
             pygame.init()
             pygame.display.init()
             self.window = pygame.display.set_mode(size)
-        if self.clock is None and self.render_mode == "human":
+        if self.clock is None and (self.render_mode == "human" or check):
             self.clock = pygame.time.Clock()
 
         screen = pygame.Surface(size)

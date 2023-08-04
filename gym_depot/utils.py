@@ -92,7 +92,7 @@ def ent_update(ent_config, ent, td):
     return ent_config, ent
 
 
-def cs_update(cs_arr, ts, tt, tt_emp, av_emp, emp_tt):
+def cs_update(cs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc):
     for idx, cs in enumerate(cs_arr):
         emp_in = False
         if emp_tt[idx] < 0:                                         # waiting for employee
@@ -103,6 +103,7 @@ def cs_update(cs_arr, ts, tt, tt_emp, av_emp, emp_tt):
                 tt_emp[idx] -= 1
                 if not tt_emp[idx] and cs_arr[idx]:
                     av_emp += 1
+                    emp_loc[idx+1] += 1
             if idx < interlock and not idx % 2:
                 if not (tt[idx+1] and not cs_arr[idx+1]):
                     if not tt[idx] or tt_emp[idx] < 0:
@@ -118,6 +119,7 @@ def cs_update(cs_arr, ts, tt, tt_emp, av_emp, emp_tt):
                             tt_emp[idx] -= 1
                         if not tt_emp[idx] and cs_arr[idx]:
                             av_emp += 1
+                            emp_loc[idx+1] += 1
                     if not tt[idx] or tt_emp[idx] < 0:
                         print(tt_emp[idx])
                     tt[idx] -= 1
@@ -133,10 +135,10 @@ def cs_update(cs_arr, ts, tt, tt_emp, av_emp, emp_tt):
                     ts[idx+1] = 0
             else:
                 ts[idx+1] = 0
-    return cs_arr, ts, tt, tt_emp, av_emp, emp_tt
+    return cs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc
 
 
-def fs_update(fs_arr, ts, tt, tt_emp, av_emp, emp_tt):
+def fs_update(fs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc):
     for idx, fs in enumerate(fs_arr):
         if emp_tt[idx+cs_num] < 0:
             continue
@@ -145,6 +147,7 @@ def fs_update(fs_arr, ts, tt, tt_emp, av_emp, emp_tt):
                 tt_emp[idx+cs_num] -= 1
                 if not tt_emp[idx+cs_num]:
                     av_emp += 1
+                    emp_loc[idx+1+cs_num] += 1
             tt[idx+cs_num] -= 1
             ts[idx+1+cs_num] = 0
         else:
@@ -154,7 +157,7 @@ def fs_update(fs_arr, ts, tt, tt_emp, av_emp, emp_tt):
                     ts[idx+1+cs_num] = 0
             else:
                 ts[idx+1+cs_num] = 0
-    return fs_arr, ts, tt, tt_emp, av_emp, emp_tt
+    return fs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc
 
 
 def delay_update(td, ent, av, cs_arr, fs_arr, av_emp, emp_tt):
@@ -190,20 +193,59 @@ def emp_tt_update(cs_arr, fs_arr, emp_tt, tt, tt_emp):
     return cs_arr, fs_arr, emp_tt, tt, tt_emp
 
 
-def update(req, av, ent, ent_config, cs_arr, fs_arr, ts, td, tt, tt_emp, av_emp, emp_tt):
+def find_closest_emp(destination, emp_loc):                     # finds emp and send him to the destination
+    time_list = []
+    idx_list = []
+    for idx, emp in enumerate(emp_loc):
+        if emp:
+            if not idx:                                                     # SB to a station
+                time_list.append(emp_time[0][destination])
+                idx_list.append(idx)
+            elif idx <= cs_num:
+                if destination < cs_num:                                       # CS TO CS
+                    time_list.append(emp_time[3][1])
+                else:
+                    time_list.append(emp_time[destination-cs_num][idx-1])      # CS TO FS
+                idx_list.append(idx)
+            elif idx > cs_num:
+                if destination >= cs_num:
+                    time_list.append(emp_time[3][0])                            # FS TO FS
+                else:
+                    time_list.append(emp_time[idx-cs_num-1][destination])       # FS TO CS
+                idx_list.append(idx)
+    time = min(time_list)
+    idx = idx_list[time_list.index(time)]
+    emp_loc[idx] -= 1
+    return time, emp_loc
+
+
+def emp_to_sb(emp_loc, emp_timer):
+    emp_timer = np.multiply(emp_timer, emp_loc[1:])                # reset timer of unavailable employees
+    for loc, emp in enumerate(emp_loc):
+        if loc and emp:
+            if emp_timer[loc-1] >= emp_time[0][loc-1]/2:           # consider emp at SB if half of the emp_time the last loc to SB passed
+                emp_loc[loc] -= 1
+                emp_loc[0] += 1
+            else:
+                emp_timer[loc-1] += 1
+    return emp_loc, emp_timer
+
+
+def update(req, av, ent, ent_config, cs_arr, fs_arr, ts, td, tt, tt_emp, av_emp, emp_tt, emp_loc, emp_timer):
     req, av_emp = request(req, av, ent, cs_arr, fs_arr, av_emp, emp_tt, tt)  # get request
     if req == total:
         ts += 1
         #print(ts)
         td = delay_update(td, ent, av, cs_arr, fs_arr, av_emp, emp_tt)  # update td
+        emp_loc, emp_timer = emp_to_sb(emp_loc, emp_timer)        # employee goes back to SB
         if emp_num and emp_time:
             cs_arr, fs_arr, emp_tt, tt, tt_emp = emp_tt_update(cs_arr, fs_arr, emp_tt, tt, tt_emp)  # update emp_tt and reset cs and fs if zero
             av = av_state(av, cs_arr, fs_arr)
         ent_config, ent = ent_update(ent_config, ent, td)  # update ent_config
-        cs_arr, ts, tt, tt_emp, av_emp, emp_tt = cs_update(cs_arr, ts, tt, tt_emp, av_emp, emp_tt)  # update cl
-        fs_arr, ts, tt, tt_emp, av_emp, emp_tt = fs_update(fs_arr, ts, tt, tt_emp, av_emp, emp_tt)  # update fl
+        cs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc = cs_update(cs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc)  # update cl
+        fs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc = fs_update(fs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc)  # update fl
         #print(f'emp_av: {av_emp}\nemp_tt: {emp_tt}\ntt: {tt}\ntt_emp: {tt_emp}\ntd: {td}')
-    return req, av, ent, ent_config, cs_arr, fs_arr, ts, td, tt, tt_emp, av_emp, emp_tt
+    return req, av, ent, ent_config, cs_arr, fs_arr, ts, td, tt, tt_emp, av_emp, emp_tt, emp_loc, emp_timer
 
 
 def av_state(av, cs_arr, fs_arr):
@@ -252,7 +294,7 @@ def get_tt(req, assign):
     if not req:
         tt = travel_time[req][assign] if travel_time else 0
     elif interlock and req <= cs_num and assign < cs_num:
-        tt = 2                                                      # TODO: CS travel inside
+        tt = travel_time[3]                                                      # travel inside pair stations
         tt_emp = tt if emp_num else 0
     elif (req <= cs_num and assign < cs_num) or (req > cs_num and assign >= cs_num):
         tt = 0            # fail

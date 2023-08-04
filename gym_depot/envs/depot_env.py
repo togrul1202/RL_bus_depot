@@ -36,7 +36,8 @@ class DepotEnv(gym.Env):
         self.ent_config = np.zeros(len(ent_array())).tolist()
 
         self.mask_fail = False
-        self.last_loc = np.zeros(total_st)
+        self.emp_loc = np.zeros(total, dtype=int)           # location of available employees [0]: SB
+        self.emp_timer = np.zeros(total_st, dtype=int)      # shows how long available emp stayed at last arrived station
 
         self.req_render = total
         self.tt_render = np.zeros(total_st, dtype=int)
@@ -85,19 +86,21 @@ class DepotEnv(gym.Env):
         if not self.req:
             self.ent = 0
         elif self.req <= cs_num:
-            cs_reset = self.req
+            cs_reset = self.req-1               # cs val to zero
             if emp_num and emp_time:
-                self.emp_tt[cs_reset-1] = emp_time[0][cs_reset-1]
-                self.emp_tt[station] = -cs_reset
+                time, self.emp_loc = find_closest_emp(cs_reset, self.emp_loc)
+                self.emp_tt[cs_reset] = time
+                self.emp_tt[station] = -cs_reset-1
             else:
-                self.cs[cs_reset-1] = 0
+                self.cs[cs_reset] = 0
         elif self.req > cs_num and self.req != total:
-            fs_reset = self.req
+            fs_reset = self.req-1               # fs val to zero
             if emp_num and emp_time:
-                self.emp_tt[fs_reset-1] = emp_time[0][fs_reset-1]
-                self.emp_tt[station] = -fs_reset
+                time, self.emp_loc = find_closest_emp(fs_reset, self.emp_loc)
+                self.emp_tt[fs_reset] = time
+                self.emp_tt[station] = -fs_reset-1
             else:
-                self.fs[fs_reset-(cs_num+1)] = 0
+                self.fs[fs_reset-cs_num] = 0
         self.req = total
 
     def _wrong_dec(self):
@@ -182,9 +185,10 @@ class DepotEnv(gym.Env):
         self.ent_config, self.ent = ent_update(self.ent_config, self.ent, self.td)
 
         self.mask_fail = False
-        self.last_loc = np.zeros(total_st, dtype=int)
+        self.emp_loc = np.zeros(total, dtype=int)
+        self.emp_timer = np.zeros(total_st, dtype=int)
         if emp_num:
-            self.last_loc[:emp_num] = 2          # employees at the SB
+            self.emp_loc[0] = emp_num          # employees at the SB
 
         if self.ent:
             self.req = 0
@@ -229,10 +233,12 @@ class DepotEnv(gym.Env):
                     step += 1
                 self._check_entrance()
                 (self.req, self.av, self.ent, self.ent_config, self.cs, self.fs, self.ts,
-                 self.td, self.tt, self.tt_emp, self.av_emp, self.emp_tt) = update(self.req, self.av, self.ent, self.ent_config,
-                                                self.cs, self.fs, self.ts, self.td, self.tt, self.tt_emp, self.av_emp, self.emp_tt)
+                 self.td, self.tt, self.tt_emp, self.av_emp, self.emp_tt, self.emp_loc, self.emp_timer) = update(self.req,
+                    self.av, self.ent, self.ent_config, self.cs, self.fs, self.ts, self.td, self.tt, self.tt_emp,
+                    self.av_emp, self.emp_tt, self.emp_loc, self.emp_timer)
                 if self.render_mode == "human":
                     self._render_frame()
+                print(f'emp_loc: {self.emp_loc}')
                 if self.req == total and sum(self.cs) == 9*bus_num and not self.emp_tt.any() and not sum(self.fs):
                     reward = win - self._get_delay()
                     terminated = True

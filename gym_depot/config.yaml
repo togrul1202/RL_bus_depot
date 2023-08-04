@@ -5,7 +5,7 @@ seed: 19                           # when random is False
 
 # request:
 req_order: [0, 1, 2]              # 0: ent, 1: cs, 2: fs
-interlock: 0
+interlock: 24
 
 # Employee:
 emp_num: 0  # int/false
@@ -23,12 +23,14 @@ bus_time: 1                       # number of time steps between two simultaneou
 charge_time: 120                 # number of time steps needed to charge to the next level
 fuel_time: 5                     # number of time steps needed to fuel to the next level
 time_delay: 1          # 1 for eval           # number of time steps considered as delay
-travel_time: [[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-              [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-              [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]]
-emp_time:   [[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-              [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-              [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]]  # emp travel from SB to a station
+travel_time: [[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],  # ENT to a station
+              [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],        # FS1 to CS
+              [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],        # FS2 to CS
+              2]    # CS to CS (only interlock)
+emp_time:   [[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3], # emp travel from SB to a station
+              [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],      # emp travel from FS1 to a CS
+              [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],      # emp travel from FS2 to a CS
+              [3, 3, 1]]      # emp travel FS TO FS, CS TO CS, CS TO CLOSE CS: to be defined
 
 # reward:
 inst: 0                                 # 0 for evaluation
@@ -39,12 +41,12 @@ repeat_per_action: False
 
 # render fps:
 render_reset: 1
-render_fast: 100
+render_fast: 1
 render_slow: 0.2                # if fail or success
 
 # training:
 sb3_model: MPPO                  # MaskablePPO = MPPO
-mask: True                      # must be false unless model is MPPO
+mask: True                      # must be false unless model is MPPO (=PPO without mask)
 training: 'training5/'
 ent_coef: 0
 models_dir: 'models/'
@@ -54,11 +56,11 @@ tr_render: False
 total_steps: 310          # * ten-thousand steps
 
 # evaluation:
-model_path_ev: 'models/training4/MPPO-1691059515/500000'    # model path or name of rule based models
+model_path_ev: 'manual'    # model path or name of rule based models
 ev_mask: True                                              # must be false unless model is MPPO
 results_dir: 'results/'
 episode_num: 100
 iteration_num: 5
-save_graph: False
+save_graph: false
 show_graph: False
-ev_render: False
+ev_render: true

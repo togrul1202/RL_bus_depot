@@ -238,7 +238,7 @@ class DepotEnv(gym.Env):
                     self.av_emp, self.emp_tt, self.emp_loc, self.emp_timer)
                 if self.render_mode == "human":
                     self._render_frame()
-                print(f'emp_loc: {self.emp_loc}')
+                #print(f'emp_loc: {self.emp_loc}')
                 if self.req == total and sum(self.cs) == 9*bus_num and not self.emp_tt.any() and not sum(self.fs):
                     reward = win - self._get_delay()
                     terminated = True

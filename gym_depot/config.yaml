@@ -35,7 +35,7 @@ emp_time:   [[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 
 # reward:
 inst: 0                                 # 0 for evaluation
 fail: -100
-win: 100
+win: 200
 repeat: 0
 repeat_per_action: False
 
@@ -47,20 +47,21 @@ render_slow: 0.2                # if fail or success
 # training:
 sb3_model: MPPO                  # MaskablePPO = MPPO
 mask: True                      # must be false unless model is MPPO (=PPO without mask)
-training: 'training5/'
+training: 'training6/'
 ent_coef: 0
-models_dir: 'models/'
-logs_dir: 'logs/'
-device: cuda:1
+models_dir: 'test/models/'
+logs_dir: 'test/logs/'
+checkpoint: 'test/models/training6/MPPO-1691407531/50000'                  # resume training
+device: cpu
 tr_render: False
-total_steps: 310          # * ten-thousand steps
+total_steps: 5          # * ten-thousand steps
 
 # evaluation:
-model_path_ev: 'manual'    # model path or name of rule based models
+model_path_ev: 'models/training7_0.001/MPPO-1691154041/3000000'    # model path or name of rule based models
 ev_mask: True                                              # must be false unless model is MPPO
 results_dir: 'results/'
 episode_num: 100
 iteration_num: 5
 save_graph: false
 show_graph: False
-ev_render: true
+ev_render: false

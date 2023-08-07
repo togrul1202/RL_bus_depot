@@ -52,7 +52,7 @@ for it in range(it_num):
     rew = []
     seed = 1
     fail = 0
-    dic = {'no_valid_action': 0, 'same_cs': 0, 'same_fs': 0, 'crash': 0, 'lock_crash': 0, 'stuck': 0, 'wrong_fs': 0}
+    fail_dict = {'no_valid_action': 0, 'same_cs': 0, 'same_fs': 0, 'crash': 0, 'lock_crash': 0, 'stuck': 0, 'wrong_fs': 0}
     for episode in range(episodes):
         obs, _ = env.reset(seed=seed)
         req = obs[-1]
@@ -81,7 +81,7 @@ for it in range(it_num):
                     episodes_up -= 1
                 if reward < 0:
                     fail += 1
-                    dic[info.get('info')] += 1
+                    fail_dict[info.get('info')] += 1
                     fail_list[episode] += 1
                 tot_rew = 0
                 act_number.append(number)
@@ -94,7 +94,7 @@ for it in range(it_num):
     mean_number = mean(act_number)
     mean_pun_list.append(mean_pun)
     fail_percent.append(fail*100/episodes)
-    print(f'mean rew: {mean_rew}\navg time steps waited: {mean_pun}\nnumber of fails: {fail}/{episodes_up}\nfails: {dic}',
+    print(f'mean rew: {mean_rew}\navg time steps waited: {mean_pun}\nnumber of fails: {fail}/{episodes_up}\nfails: {fail_dict}',
           f'mean number: {mean_number}')
 
     if it == 0:

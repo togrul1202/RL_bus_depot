@@ -52,7 +52,8 @@ for it in range(it_num):
     rew = []
     seed = 1
     fail = 0
-    fail_dict = {'no_valid_action': 0, 'same_cs': 0, 'same_fs': 0, 'crash': 0, 'lock_crash': 0, 'stuck': 0, 'wrong_fs': 0}
+    fail_dict = {'waiting_limit_exceeded': 0, 'no_valid_action': 0, 'same_cs': 0, 'same_fs': 0, 'crash': 0,
+                 'lock_crash': 0, 'stuck': 0, 'wrong_fs': 0}
     for episode in range(episodes):
         obs, _ = env.reset(seed=seed)
         req = obs[-1]

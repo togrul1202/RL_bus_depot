@@ -253,7 +253,7 @@ class DepotEnv(gym.Env):
             if not terminated:
                 reward = self._get_reward(r)
                 if reward <= -params['waiting_limit'] and params['waiting_limit']:
-                    self.info = 'waiting_time_exceeded'
+                    self.info = 'waiting_limit_exceeded'
                     terminated = True
                 self.ter_num -= 1 if self.ter_num and rep_per_action else 0
                 #print(self.ent_config)

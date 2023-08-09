@@ -33,6 +33,10 @@ else:
 time_delay = params['time_delay']
 travel_time = params['travel_time']
 interlock = params['interlock']
+if interlock > cs_num:
+    raise Exception('No more pair stations than cs')
+elif interlock % 2:
+    raise Exception('interlock must be even number')
 emp_num = params['emp_num']
 emp_time = params['emp_time']
 rep_num = params['repeat']
@@ -97,7 +101,7 @@ def cs_update(cs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc):
         emp_in = False
         if emp_tt[idx] < 0:                                         # waiting for employee
             continue
-        elif tt[idx] or tt_emp[idx]:                                 # TODO: add emp_time
+        elif tt[idx] or tt_emp[idx]:
             if tt_emp[idx] == tt[idx] != 0:                        # employee in a bus
                 emp_in = True
                 tt_emp[idx] -= 1
@@ -142,7 +146,7 @@ def fs_update(fs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc):
     for idx, fs in enumerate(fs_arr):
         if emp_tt[idx+cs_num] < 0:
             continue
-        elif tt[idx+cs_num] or tt_emp[idx+cs_num]:                                  # TODO: add emp_time
+        elif tt[idx+cs_num] or tt_emp[idx+cs_num]:
             if tt_emp[idx+cs_num] == tt[idx+cs_num] != 0:                        # employee in a bus
                 tt_emp[idx+cs_num] -= 1
                 if not tt_emp[idx+cs_num]:
@@ -320,7 +324,7 @@ def check_interlock(act, req, av, cs_arr, state):
             if av[act+1] and act != req-2:
                 crash = True
 
-        if act % 2 and cs_arr[act-1] and act < interlock:
+        if act < interlock and act % 2 and cs_arr[act-1]:
             if state < 9 and state % 3 and not cs_arr[act-1] % 3:
                 stuck = True
 

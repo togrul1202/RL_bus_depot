@@ -1,5 +1,5 @@
 # entrance:
-bus_num: 25
+bus_num: 26
 random: True                      # if True: random initial state
 seed: 71                           # when random is False
 
@@ -11,7 +11,7 @@ interlock: 24
 emp_num: 0  # int/false
 
 # CS:
-cs_num: 25
+cs_num: 26
 
 # FS:
 fs_num: 2

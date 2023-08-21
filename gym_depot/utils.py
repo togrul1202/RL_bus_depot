@@ -37,6 +37,8 @@ if interlock > cs_num:
     raise Exception('No more pair stations than cs')
 elif interlock % 2:
     raise Exception('interlock must be even number')
+if bus_num > cs_num:
+    raise Exception('no more buses than CS')
 emp_num = params['emp_num']
 emp_time = params['emp_time']
 rep_num = params['repeat']
@@ -106,8 +108,13 @@ def cs_update(cs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc):
                 emp_in = True
                 tt_emp[idx] -= 1
                 if not tt_emp[idx] and cs_arr[idx]:
-                    av_emp += 1
-                    emp_loc[idx+1] += 1
+                    if idx < interlock and not idx % 2:
+                        if not (tt[idx+1] and not cs_arr[idx+1]):           # on travel request: no extra emp
+                            av_emp += 1
+                            emp_loc[idx + 1] += 1
+                    else:
+                        av_emp += 1
+                        emp_loc[idx+1] += 1
             if idx < interlock and not idx % 2:
                 if not (tt[idx+1] and not cs_arr[idx+1]):
                     if not tt[idx] or tt_emp[idx] < 0:
@@ -197,7 +204,7 @@ def emp_tt_update(cs_arr, fs_arr, emp_tt, tt, tt_emp):
     return cs_arr, fs_arr, emp_tt, tt, tt_emp
 
 
-def find_closest_emp(destination, emp_loc):                     # finds emp and send him to the destination
+def find_closest_emp(destination, station, emp_tt, emp_loc):                     # finds emp and send him to the destination
     time_list = []
     idx_list = []
     for idx, emp in enumerate(emp_loc):
@@ -220,7 +227,9 @@ def find_closest_emp(destination, emp_loc):                     # finds emp and 
     time = min(time_list)
     idx = idx_list[time_list.index(time)]
     emp_loc[idx] -= 1
-    return time, emp_loc
+    emp_tt[destination] = time
+    emp_tt[station] = -destination-1
+    return emp_tt, emp_loc
 
 
 def emp_to_sb(emp_loc, emp_timer):

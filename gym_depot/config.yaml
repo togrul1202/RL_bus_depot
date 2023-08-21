@@ -8,7 +8,7 @@ req_order: [0, 1, 2]              # 0: ent, 1: cs, 2: fs
 interlock: 24
 
 # Employee:
-emp_num: 0  # int/false
+emp_num: 3  # int/false
 
 # CS:
 cs_num: 26
@@ -36,13 +36,13 @@ emp_time:   [[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 
 inst: 0                                 # 0 for evaluation
 fail: -100
 win: 200
-waiting_limit: 150                    # max total waiting time till the next request, if exceeded: fail
+waiting_limit: 0                    # max total waiting time till the next request, if exceeded: fail
 repeat: 0
 repeat_per_action: False
 
 # render fps:
 render_reset: 1
-render_fast: 100
+render_fast: 10
 render_slow: 0.2                # if fail or success
 
 # training:
@@ -58,7 +58,7 @@ tr_render: False
 total_steps: 1000          # * ten-thousand steps
 
 # evaluation:
-model_path_ev: 'models/training6/MPPO-1691069865/3000000'    # model path or name of rule based models
+model_path_ev: 'manual'    # model path or name of rule based models
 ev_mask: True                                              # must be false unless model is MPPO
 results_dir: 'results/'
 episode_num: 100

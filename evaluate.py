@@ -40,7 +40,7 @@ else:
 os.makedirs(output_dir, exist_ok=True)
 
 episodes = params['episode_num']
-fail_list = np.zeros(100)
+fail_list = np.zeros(episodes)
 it_num = params['iteration_num']
 mean_pun_list = []
 fail_percent = []
@@ -87,8 +87,8 @@ for it in range(it_num):
                 tot_rew = 0
                 act_number.append(number)
                 #print(f'number: {number}')
-                #print(f'seed: {seed}')
                 seed += 1
+                #print(f'seed: {seed}')
                 break
     mean_rew = mean(rew)
     mean_pun = mean(rew_diff)

@@ -88,17 +88,16 @@ class DepotEnv(gym.Env):
         elif self.req <= cs_num:
             cs_reset = self.req-1               # cs val to zero
             if emp_num and emp_time:
-                time, self.emp_loc = find_closest_emp(cs_reset, self.emp_loc)
-                self.emp_tt[cs_reset] = time
-                self.emp_tt[station] = -cs_reset-1
+                if cs_reset < interlock and cs_reset % 2 and self.tt[cs_reset]:     # on travel request: reset prev cs
+                    self.cs[cs_reset] = 0
+                else:
+                    self.emp_tt, self.emp_loc = find_closest_emp(cs_reset, station, self.emp_tt, self.emp_loc)
             else:
                 self.cs[cs_reset] = 0
         elif self.req > cs_num and self.req != total:
             fs_reset = self.req-1               # fs val to zero
             if emp_num and emp_time:
-                time, self.emp_loc = find_closest_emp(fs_reset, self.emp_loc)
-                self.emp_tt[fs_reset] = time
-                self.emp_tt[station] = -fs_reset-1
+                self.emp_tt, self.emp_loc = find_closest_emp(fs_reset, station, self.emp_tt, self.emp_loc)
             else:
                 self.fs[fs_reset-cs_num] = 0
         self.req = total
@@ -246,6 +245,9 @@ class DepotEnv(gym.Env):
                     if self.render_mode == "human":
                         self._render_frame(success=True)
                     #print('success')
+                    if emp_num:
+                        if self.av_emp == emp_num and self.tt.any() or self.av_emp > emp_num:
+                            print('emp number exceeded: check the code')
                     break
                 # elif self.req == total:
                 #     print('1 ts passed')
@@ -262,7 +264,7 @@ class DepotEnv(gym.Env):
         # if self.render_mode == "human":
         #     self._render_frame()
         self.td = np.zeros(total, dtype=int)
-        # print(f'employee: {self.av_emp}\ntt: {self.tt}\nemp_tt: {self.emp_tt}')
+        # print(f'employee: {self.av_emp} emp_loc: {self.emp_loc}\ntt: {self.tt}\nemp_tt: {self.emp_tt}\nobs: {observation}')
 
         return observation, reward, terminated, truncated, info
 

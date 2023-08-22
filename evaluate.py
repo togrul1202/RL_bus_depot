@@ -14,6 +14,8 @@ from gym_depot.utils import params
 from manual import req_act
 from manual_inv import req_act_inv
 
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+
 if params['ev_render']:
     env = gymnasium.make('BusDepot-v0', render_mode='human')
 else:

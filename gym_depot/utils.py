@@ -14,8 +14,10 @@ bus_time = params['bus_time']
 min_dur = params['min_duration']
 max_dur = params['max_duration']
 charge = params['charge_time']
+fast_charge = params['fast_charge_time']
 fuel = params['fuel_time']
 cs_num = params['cs_num']
+fast_cs_num = params['fast_cs_num']
 fs_num = params['fs_num']
 req_order = params['req_order']
 inst = params['inst']
@@ -39,6 +41,8 @@ elif interlock % 2:
     raise Exception('interlock must be even number')
 if bus_num > cs_num:
     raise Exception('no more buses than CS')
+if fast_cs_num > cs_num:
+    raise Exception('no more FCS than CS')
 emp_num = params['emp_num']
 emp_time = params['emp_time']
 rep_num = params['repeat']
@@ -141,9 +145,14 @@ def cs_update(cs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc):
             ts[idx + 1] = 0
         else:
             if cs != 0 and cs < 7:
-                if ts[idx+1] == charge:
-                    cs_arr[idx] += 3
-                    ts[idx+1] = 0
+                if idx < fast_cs_num:
+                    if ts[idx + 1] == fast_charge:
+                        cs_arr[idx] += 3
+                        ts[idx + 1] = 0
+                else:
+                    if ts[idx+1] == charge:
+                        cs_arr[idx] += 3
+                        ts[idx+1] = 0
             else:
                 ts[idx+1] = 0
     return cs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc

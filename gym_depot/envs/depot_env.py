@@ -439,7 +439,7 @@ class DepotEnv(gym.Env):
         # CS
         ki = 0
         for idx, val in enumerate(self.cs_render):
-            cs_name = 'CS ' + str(idx + 1)
+            cs_name = 'CS ' + str(idx + 1) if idx >= fast_cs_num else 'FCS ' + str(idx + 1)
             if val:
                 cs_text = 'info: ' + str(val)
             else:
@@ -470,14 +470,22 @@ class DepotEnv(gym.Env):
                 cs_color[idx] = yellow
             elif val:
                 cs_color[idx] = blue
-            if not interlock:
-                loc = ((175, 670 - idx * 40, 50, 25), (175, 680 - idx * 40))
+            if idx < fast_cs_num:
+                tot_y = (fast_cs_num-1)*90+20
+                j = 0 if idx % 2 else 1
+                y = idx*90+j*20 - tot_y
+                loc = ((710, 650+y, 25, 50), (710, 680+y))
             else:
-                if idx < interlock:
-                    ki = math.floor(idx / 2)
-                j = idx % 2 if idx+1 < interlock else 1
-                k = ki if idx < interlock else idx-interlock+ki+1
-                loc = ((175+j*90, 670-k*40, 50, 25), (175+j*90, 680-k*40))
+                r_idx = idx - fast_cs_num
+                if not interlock:
+                    loc = ((175, 670 - r_idx * 40, 50, 25), (175, 680 - r_idx * 40))
+                else:
+                    inter = interlock - fast_cs_num
+                    if r_idx < inter:
+                        ki = math.floor(r_idx / 2)
+                    j = r_idx % 2 if r_idx+1 < inter else 1
+                    k = ki if r_idx < inter else r_idx-inter+ki+1
+                    loc = ((175+j*90, 670-k*40, 50, 25), (175+j*90, 680-k*40))
             cs_loc, cs_text_loc = loc
             pygame.draw.rect(
                 screen,
@@ -486,7 +494,7 @@ class DepotEnv(gym.Env):
             )
             cs_text_surface = font.render(cs_text, True, font_color)
             screen.blit(cs_text_surface, cs_text_loc)
-            cs_name_loc = (cs_loc[0], cs_loc[1]+25)
+            cs_name_loc = (cs_loc[0], cs_loc[1]+25) if idx >= fast_cs_num else (cs_loc[0], cs_loc[1]+55)
             cs_name_surface = font.render(cs_name, True, font_color)
             screen.blit(cs_name_surface, cs_name_loc)
 

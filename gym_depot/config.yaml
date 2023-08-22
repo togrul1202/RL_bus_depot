@@ -1,17 +1,18 @@
 # entrance:
-bus_num: 26
+bus_num: 25
 random: True                      # if True: random initial state
 seed: 71                           # when random is False
 
 # request:
 req_order: [0, 1, 2]              # 0: ent, 1: cs, 2: fs
-interlock: 24
 
 # Employee:
 emp_num: 3  # int/false
 
 # CS:
-cs_num: 26
+cs_num: 25
+fast_cs_num: 4              # fast CS (first indexes of cs_num)
+interlock: 24               # of regular CS
 
 # FS:
 fs_num: 2
@@ -21,6 +22,7 @@ min_duration: 360                  # min number of time steps between first and 
 max_duration: 600                # max duration
 bus_time: 1                       # number of time steps between two simultaneously arrived buses
 charge_time: 120                 # number of time steps needed to charge to the next level
+fast_charge_time: 60
 fuel_time: 5                     # number of time steps needed to fuel to the next level
 time_delay: 1          # 1 for eval           # number of time steps considered as delay
 travel_time: [[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],  # ENT to a station
@@ -35,14 +37,14 @@ emp_time:   [[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 
 # reward:
 inst: 0                                 # 0 for evaluation
 fail: -100
-win: 200
+win: 300
 waiting_limit: 0                    # max total waiting time till the next request, if exceeded: fail
 repeat: 0
 repeat_per_action: False
 
 # render fps:
 render_reset: 1
-render_fast: 10
+render_fast: 100
 render_slow: 0.2                # if fail or success
 
 # training:
@@ -58,11 +60,11 @@ tr_render: False
 total_steps: 1000          # * ten-thousand steps
 
 # evaluation:
-model_path_ev: 'manual'    # model path or name of rule based models
+model_path_ev: 'models/training9/MPPO-1692635350/5000000'    # model path or name of rule based models
 ev_mask: True                                              # must be false unless model is MPPO
 results_dir: 'results/'
-episode_num: 100
-iteration_num: 5
-save_graph: False
-show_graph: False
-ev_render: False
+episode_num: 1000
+iteration_num: 1
+save_graph: false
+show_graph: false
+ev_render: True

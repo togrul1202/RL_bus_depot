@@ -22,7 +22,7 @@ def req_act(req, obs):
         action = get_act(obs[1:-1])
     elif req <= cs_num:
         action = get_act(obs[cs_num + 1:-1], n=cs_num)
-        if action == None or obs[req] == 9:
+        if action == None or obs[req] == SF:
             action = req-2
     else:
         action = get_act(obs[1:cs_num + 1])

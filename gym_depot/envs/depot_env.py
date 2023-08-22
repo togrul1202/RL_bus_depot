@@ -7,16 +7,11 @@ from gymnasium import spaces
 
 from gym_depot.utils import *
 
-rng = np.random.default_rng()
-
 
 class DepotEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 1}
 
     def __init__(self, render_mode=None):
-        self.size = 5
-        self.window_size = 512
-
         self.observation_space = spaces.Box(low=0, high=value, shape=(shape,), dtype=int)
         self.action_space = spaces.Discrete(total_st)
 
@@ -125,7 +120,7 @@ class DepotEnv(gym.Env):
         num = cs_num
         if action < num < self.req:
             r = inst
-        elif action >= num >= self.req != 0 and self.cs[self.req-1] != 9:
+        elif action >= num >= self.req != 0 and self.cs[self.req-1] != SF:
             r = inst
         else:
             r = 0
@@ -139,9 +134,9 @@ class DepotEnv(gym.Env):
         state = self._get_state()
         lock, lock_crash, stuck = check_interlock(action, self.req, self.av, self.cs, state)
         crash = self.cs[action] != 0 if action < cs_num else self.fs[action-cs_num] != 0
-        same_cs = action < num and self.req <= num and self.req != 0 and not lock and self.cs[self.req - 1] != 9    # even if there is av fs value 9 doesnt lead same_cs
+        same_cs = action < num and self.req <= num and self.req != 0 and not lock and self.cs[self.req - 1] != SF    # even if there is av fs value SF doesnt lead same_cs
         same_fs = action >= num and self.req > num
-        wrong_fs = action >= num >= self.req != 0 and self.cs[self.req - 1] == 9    # wrong fs iff cs value is 9
+        wrong_fs = action >= num >= self.req != 0 and self.cs[self.req - 1] == SF    # wrong fs iff cs value is SF
         dic = {'no_valid_action': self.mask_fail, 'same_cs': same_cs, 'same_fs': same_fs, 'crash': crash,
                'lock_crash': lock_crash, 'stuck': stuck, 'wrong_fs': wrong_fs}
         for key, val in dic.items():
@@ -238,7 +233,7 @@ class DepotEnv(gym.Env):
                 if self.render_mode == "human":
                     self._render_frame()
                 #print(f'emp_loc: {self.emp_loc}')
-                if self.req == total and sum(self.cs) == 9*bus_num and not self.emp_tt.any() and not sum(self.fs):
+                if self.req == total and sum(self.cs) == SF*bus_num and not self.emp_tt.any() and not sum(self.fs):
                     reward = win - self._get_delay()
                     terminated = True
                     self.metadata["render_fps"] = params['render_slow']
@@ -279,7 +274,7 @@ class DepotEnv(gym.Env):
         obs = self._get_obs()
         state = self._get_state()
         lock, lock_crash, stuck = check_interlock(action, self.req, self.av, self.cs, state)
-        wrong_fs = action >= cs_num >= self.req != 0 and self.cs[self.req - 1] == 9
+        wrong_fs = action >= cs_num >= self.req != 0 and self.cs[self.req - 1] == SF
         if obs[action + 1]:
             return False                                    # avoid crash
         if lock_crash:
@@ -288,7 +283,7 @@ class DepotEnv(gym.Env):
             return False
         if not self.req:
             return True
-        elif self.req <= cs_num and action < cs_num and not lock and self.cs[self.req - 1] != 9:
+        elif self.req <= cs_num and action < cs_num and not lock and self.cs[self.req - 1] != SF:
             return False                                    # avoid same_cs
         elif self.req > cs_num and action >= cs_num:
             return False                                    # avoid same_fs
@@ -312,7 +307,8 @@ class DepotEnv(gym.Env):
         blue = (5, 213, 250)
         yellow = (255, 255, 0)
         grey = (200, 200, 200)
-        brown = (101, 67, 33)
+        brown = (141, 107, 83)
+        brown_text = (101, 67, 43)
         black = (0, 0, 0)
 
         if not self.info:
@@ -330,9 +326,6 @@ class DepotEnv(gym.Env):
         color_info = ['empty', 'bus not arrived', 'employee not arrived', 'charging/fueling', 'request to go',
                       'request delayed', 'charging and fueling finished']
 
-        # value info
-        rows = ['info', 'SoC', 'FL']
-
         # actions
         if action is not None:
             if action < cs_num:
@@ -343,18 +336,18 @@ class DepotEnv(gym.Env):
         # stations
         station = ''
         ent_color = green
-        ent_loc = (550, 720, 25, 50)
+        ent_loc = (500, 680, 30, 90)
         ent_text = ''
-        ent_text_loc = (560, 730)
+        ent_text_loc = (500, 730)
         ent_name = 'Entrance'
-        ent_name_loc = (550, 777)
+        ent_name_loc = (500, 777)
 
         cs_color = [green] * cs_num
 
         fs_color = [green] * fs_num
-        fs_loc = [(220, 740, 50, 25), (25, 425, 25, 50)]
-        fs_text_loc = [(220, 750), (35, 435)]
-        fs_name_loc = [(220, 767), (55, 467)]
+        fs_loc = [(220, 740, 90, 30), (25, 425, 30, 90)]
+        fs_text_loc = [(220, 750), (25, 465)]
+        fs_name_loc = [(220, 775), (25, 520)]
 
         if self.window is None and (self.render_mode == "human" or check):
             pygame.init()
@@ -366,66 +359,70 @@ class DepotEnv(gym.Env):
         screen = pygame.Surface(size)
         screen.fill(white)
 
-        font_size = 20
-        font_color = black
+        font_size = 30
         font = pygame.font.Font(None, font_size)
-        info_x = 550
 
         # time
         time = 'time passed: ' + str(max(self.ts)) + ' minutes'
-        time_loc = (550, 320)
-        time_surface = font.render(time, True, brown)
+        time_loc = (450, 140)
+        time_surface = font.render(time, True, brown_text)
         screen.blit(time_surface, time_loc)
 
         # employee
         if emp_num:
             emp = 'number of available employees: ' + str(self.av_emp)
-            emp_loc = (550, 340)
-            emp_surface = font.render(emp, True, brown)
+            emp_loc = (450, 160)
+            emp_surface = font.render(emp, True, brown_text)
             screen.blit(emp_surface, emp_loc)
 
         # color info
+        font_size = 20
+        font_color = black
+        font = pygame.font.Font(None, font_size)
+        info_x = 550
         for idx, color in enumerate(colors):
             color_text = color + ': ' + color_info[idx]
             color_text_loc = (info_x, 17*idx)
             color_text_surface = font.render(color_text, True, font_color)
             screen.blit(color_text_surface, color_text_loc)
-        last_loc = 19*(idx+1)
+        # last_loc = 19*(idx+1)
 
         # value info
-        for i, txt in enumerate(rows):
-            txt_loc = (info_x+i*34, last_loc)
-            txt_surface = font.render(txt, True, font_color)
-            screen.blit(txt_surface, txt_loc)
-            for j in range(9):
-                text_loc = (info_x + i * 34, last_loc + 17 * (j+1))
-                if txt == 'info':
-                    j += 1
-                elif txt == 'SoC':
-                    j = math.floor(j/3)
-                elif txt == 'FL':
-                    j %= 3
-                text_surface = font.render(str(j), True, font_color)
-                screen.blit(text_surface, text_loc)
+        # rows = ['info', 'SoC', 'FL']
+        # for i, txt in enumerate(rows):
+        #     txt_loc = (info_x+i*34, last_loc)
+        #     txt_surface = font.render(txt, True, font_color)
+        #     screen.blit(txt_surface, txt_loc)
+        #     for j in range(SF):
+        #         text_loc = (info_x + i * 34, last_loc + 17 * (j+1))
+        #         if txt == 'info':
+        #             j += 1
+        #         elif txt == 'SoC':
+        #             j = math.floor(j/level_num)
+        #         elif txt == 'FL':
+        #             j %= level_num
+        #         text_surface = font.render(str(j), True, font_color)
+        #         screen.blit(text_surface, text_loc)
 
         font_size = 16
         font_color = black
         font = pygame.font.Font(None, font_size)
 
         # Ent
+        if self.ent_render:
+            soc, fl = soc_and_fl(self.ent_render)
+            ent_text = 'SoC: ' + str(soc) + ', FL: ' + str(fl)
         if self.td_render[0]:
             ent_color = red
-            ent_text = 'info: ' + str(self.ent_render) + ', delay: ' + str(self.td_render[0])
+            ent_text += ', delay: ' + str(self.td_render[0])
         elif self.ent_render:
             ent_color = yellow
-            ent_text = 'info: ' + str(self.ent_render)
         pygame.draw.rect(
             screen,
             ent_color,
             ent_loc,
         )
         ent_text_surface = font.render(ent_text, True, font_color)
-        ent_text_surface = pygame.transform.rotate(ent_text_surface, 90)
         screen.blit(ent_text_surface, ent_text_loc)
 
         if action and not self.req_render:
@@ -441,7 +438,8 @@ class DepotEnv(gym.Env):
         for idx, val in enumerate(self.cs_render):
             cs_name = 'CS ' + str(idx + 1) if idx >= fast_cs_num else 'FCS ' + str(idx + 1)
             if val:
-                cs_text = 'info: ' + str(val)
+                soc, fl = soc_and_fl(val)
+                cs_text = 'SoC: ' + str(soc) + ', FL: ' + str(fl)
             else:
                 cs_text = ''
             if action and self.req_render == idx+1:
@@ -459,33 +457,33 @@ class DepotEnv(gym.Env):
                 cs_text = cs_text + ', delay: ' + str(self.td_render[idx+1]) if not success else ''
             elif self.tt_render[idx]:
                 cs_color[idx] = grey
-            elif val == 9:
+            elif val == SF:
                 if self.req_render == idx+1:
                     cs_color[idx] = yellow
                 elif self.emp_tt[idx]:
                     cs_color[idx] = pink
                 else:
                     cs_color[idx] = brown
-            elif val >= 7:
+            elif val > SF-level_num:
                 cs_color[idx] = yellow
             elif val:
                 cs_color[idx] = blue
             if idx < fast_cs_num:
-                tot_y = (fast_cs_num-1)*90+20
+                tot_y = (fast_cs_num-1)*130+15
                 j = 0 if idx % 2 else 1
-                y = idx*90+j*20 - tot_y
-                loc = ((710, 650+y, 25, 50), (710, 680+y))
+                y = idx*130+j*15 - tot_y
+                loc = ((650, 610+y, 30, 90), (650, 650+y))
             else:
                 r_idx = idx - fast_cs_num
                 if not interlock:
-                    loc = ((175, 670 - r_idx * 40, 50, 25), (175, 680 - r_idx * 40))
+                    loc = ((150, 670 - r_idx * 50, 90, 30), (150, 680 - r_idx * 50))
                 else:
                     inter = interlock - fast_cs_num
                     if r_idx < inter:
                         ki = math.floor(r_idx / 2)
                     j = r_idx % 2 if r_idx+1 < inter else 1
                     k = ki if r_idx < inter else r_idx-inter+ki+1
-                    loc = ((175+j*90, 670-k*40, 50, 25), (175+j*90, 680-k*40))
+                    loc = ((150+j*150, 670-k*50, 90, 30), (150+j*150, 680-k*50))
             cs_loc, cs_text_loc = loc
             pygame.draw.rect(
                 screen,
@@ -494,14 +492,15 @@ class DepotEnv(gym.Env):
             )
             cs_text_surface = font.render(cs_text, True, font_color)
             screen.blit(cs_text_surface, cs_text_loc)
-            cs_name_loc = (cs_loc[0], cs_loc[1]+25) if idx >= fast_cs_num else (cs_loc[0], cs_loc[1]+55)
+            cs_name_loc = (cs_loc[0], cs_loc[1]+33) if idx >= fast_cs_num else (cs_loc[0], cs_loc[1]+95)
             cs_name_surface = font.render(cs_name, True, font_color)
             screen.blit(cs_name_surface, cs_name_loc)
 
         # FS
         for idx, val in enumerate(self.fs_render):
             if val:
-                fs_text = 'info: ' + str(val)
+                soc, fl = soc_and_fl(val)
+                fs_text = 'SoC: ' + str(soc) + ', FL: ' + str(fl)
             else:
                 fs_text = ''
             if self.td_render[idx+1+cs_num]:
@@ -514,7 +513,7 @@ class DepotEnv(gym.Env):
                 fs_text = fs_text + ', delay: ' + str(self.td_render[idx + cs_num + 1]) if not success else ''
             elif self.tt_render[idx+cs_num]:
                 fs_color[idx] = grey
-            elif val % 3:
+            elif val % level_num:
                 fs_color[idx] = blue
             elif val:
                 fs_color[idx] = yellow
@@ -524,8 +523,6 @@ class DepotEnv(gym.Env):
                 fs_loc[idx],
             )
             fs_text_surface = font.render(fs_text, True, font_color)
-            if idx:
-                fs_text_surface = pygame.transform.rotate(fs_text_surface, 90)
             screen.blit(fs_text_surface, fs_text_loc[idx])
             fs_name = 'FS ' + str(idx+1)
             if action and self.req_render == idx+cs_num+1:

@@ -1,6 +1,7 @@
 import numpy as np
 import yaml
 import pygame
+import math
 
 
 with open('gym_depot/config.yaml') as stream:
@@ -16,6 +17,8 @@ max_dur = params['max_duration']
 charge = params['charge_time']
 fast_charge = params['fast_charge_time']
 fuel = params['fuel_time']
+level_num = params['level_num']
+SF = level_num**2
 cs_num = params['cs_num']
 fast_cs_num = params['fast_cs_num']
 fs_num = params['fs_num']
@@ -28,8 +31,8 @@ seed = params['seed']
 total_st = cs_num + fs_num
 total = total_st + 1
 shape = total + 1
-if shape <= 9:
-    value = 9
+if shape <= SF:
+    value = SF
 else:
     value = shape
 time_delay = params['time_delay']
@@ -93,7 +96,7 @@ def ent_update(ent_config, ent, td):
     if len(ent_config):
         if not ent:
             if ent_config[0]:
-                ent = np.random.choice([1, 2, 4, 5])  # self.ent_config[0]
+                ent = np.random.choice([a for a in range(SF-level_num) if a % level_num])  # self.ent_config[0]
                 #print(f'ent: {ent}')
             del ent_config[0]
         else:
@@ -144,14 +147,14 @@ def cs_update(cs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc):
                 tt[idx] -= 1
             ts[idx + 1] = 0
         else:
-            if cs != 0 and cs < 7:
+            if cs != 0 and cs <= SF-level_num:
                 if idx < fast_cs_num:
                     if ts[idx + 1] == fast_charge:
-                        cs_arr[idx] += 3
+                        cs_arr[idx] += level_num
                         ts[idx + 1] = 0
                 else:
                     if ts[idx+1] == charge:
-                        cs_arr[idx] += 3
+                        cs_arr[idx] += level_num
                         ts[idx+1] = 0
             else:
                 ts[idx+1] = 0
@@ -171,7 +174,7 @@ def fs_update(fs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc):
             tt[idx+cs_num] -= 1
             ts[idx+1+cs_num] = 0
         else:
-            if fs % 3 != 0 and fs != 0:
+            if fs % level_num != 0 and fs != 0:
                 if ts[idx+1+cs_num] == fuel:
                     fs_arr[idx] += 1
                     ts[idx+1+cs_num] = 0
@@ -184,11 +187,11 @@ def delay_update(td, ent, av, cs_arr, fs_arr, av_emp, emp_tt):
     if ent and 0 not in av:
         td[0] += 1
     for idx, cs in enumerate(cs_arr):
-        if cs == 7 or cs == 8:
+        if cs > SF-level_num and cs != SF:
             if 0 not in av[cs_num:] or not av_emp or emp_tt[idx] or (idx % 2 and idx < interlock and av[idx - 1]):
                 td[idx + 1] += 1
     for idx, fs in enumerate(fs_arr):
-        if fs % 3 == 0 and fs != 0 and (0 not in av[:cs_num] or not av_emp or emp_tt[idx+cs_num]):
+        if fs % level_num == 0 and fs != 0 and (0 not in av[:cs_num] or not av_emp or emp_tt[idx+cs_num]):
             td[idx+1+cs_num] += 1
     return td
 
@@ -291,20 +294,20 @@ def request(req, av, ent, cs_arr, fs_arr, av_emp, emp_tt, tt):
         if i == 1 and req == total and av_emp:
             for idx, cs in enumerate(cs_arr):
                 if not emp_tt[idx]:                        # avoid requesting again while waiting for an employee
-                    if idx % 2 and idx < interlock and cs >= 7:
+                    if idx % 2 and idx < interlock and cs > SF-level_num:
                         if not cs_arr[idx-1] and not tt[idx-1]:
                             req = idx + 1
                             if not tt[idx]:                 # on travel request: don't ask for another employee
                                 av_emp = av_emp - 1 if emp_num else 1
                             break
-                    elif (cs == 7 or cs == 8) and 0 in av[cs_num:]:
+                    elif (cs > SF-level_num and cs != SF) and 0 in av[cs_num:]:
                         req = idx+1
                         av_emp = av_emp - 1 if emp_num else 1
                         break
 
         if i == 2 and req == total and av_emp:
             for idx, fs in enumerate(fs_arr):
-                if fs % 3 == 0 and fs != 0 and 0 in av[:cs_num] and not emp_tt[idx+cs_num]:
+                if fs % level_num == 0 and fs != 0 and 0 in av[:cs_num] and not emp_tt[idx+cs_num]:
                     req = idx+1+cs_num
                     av_emp = av_emp - 1 if emp_num else 1
                     break
@@ -343,8 +346,13 @@ def check_interlock(act, req, av, cs_arr, state):
                 crash = True
 
         if act < interlock and act % 2 and cs_arr[act-1]:
-            if state < 9 and state % 3 and not cs_arr[act-1] % 3:
+            if state < SF and state % level_num and not cs_arr[act-1] % level_num:
                 stuck = True
 
     return lock, crash, stuck
 
+
+def soc_and_fl(info):
+    soc = (math.floor((info - 1) / level_num)) * 100 / (level_num - 1)
+    fl = ((info-1) % level_num) * 100 / (level_num - 1)
+    return int(soc), int(fl)

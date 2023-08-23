@@ -137,13 +137,14 @@ class DepotEnv(gym.Env):
         same_cs = action < num and self.req <= num and self.req != 0 and not lock and self.cs[self.req - 1] != SF    # even if there is av fs value SF doesnt lead same_cs
         same_fs = action >= num and self.req > num
         wrong_fs = action >= num >= self.req != 0 and self.cs[self.req - 1] == SF    # wrong fs iff cs value is SF
+        wrong_cs = self.req <= num and self.req != 0 and (action < num and action < interlock and action % 2)
         dic = {'no_valid_action': self.mask_fail, 'same_cs': same_cs, 'same_fs': same_fs, 'crash': crash,
-               'lock_crash': lock_crash, 'stuck': stuck, 'wrong_fs': wrong_fs}
+               'lock_crash': lock_crash, 'stuck': stuck, 'wrong_fs': wrong_fs, 'wrong_cs': wrong_cs}
         for key, val in dic.items():
             if val:
                 self.info = key
                 break
-        if self.mask_fail or crash or same_cs or same_fs or lock_crash or stuck or wrong_fs:
+        if self.mask_fail or crash or same_cs or same_fs or lock_crash or stuck or wrong_fs or wrong_cs:
             rew = fail - self._get_delay()
             if self.ter_num < rep_num:
                 self.ter_num += 1
@@ -275,6 +276,7 @@ class DepotEnv(gym.Env):
         state = self._get_state()
         lock, lock_crash, stuck = check_interlock(action, self.req, self.av, self.cs, state)
         wrong_fs = action >= cs_num >= self.req != 0 and self.cs[self.req - 1] == SF
+        wrong_cs = self.req <= cs_num and self.req != 0 and (action < cs_num and action < interlock and action % 2)
         if obs[action + 1]:
             return False                                    # avoid crash
         if lock_crash:
@@ -288,6 +290,8 @@ class DepotEnv(gym.Env):
         elif self.req > cs_num and action >= cs_num:
             return False                                    # avoid same_fs
         elif wrong_fs:
+            return False
+        elif wrong_cs:
             return False
         else:
             return True
@@ -363,7 +367,7 @@ class DepotEnv(gym.Env):
         font = pygame.font.Font(None, font_size)
 
         # time
-        time = 'time passed: ' + str(max(self.ts)) + ' minutes'
+        time = 'time passed: ' + str(round(max(self.ts)/min_to_ts, 2)) + ' minutes'
         time_loc = (450, 140)
         time_surface = font.render(time, True, brown_text)
         screen.blit(time_surface, time_loc)
@@ -542,7 +546,7 @@ class DepotEnv(gym.Env):
             if success:
                 text = 'SUCCESS'
                 self.td_total += sum(self.td)
-                info = 'total waiting time: ' + str(self.td_total) + ' minutes'
+                info = 'total waiting time: ' + str(round(self.td_total/min_to_ts, 2)) + ' minutes'
                 color = green
             text_loc = (400, 400)
             info_loc = (400, 450)

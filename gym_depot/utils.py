@@ -10,15 +10,17 @@ with open('gym_depot/config.yaml') as stream:
     except yaml.YAMLError as exc:
         print(exc)
 
-bus_num = params['bus_num']
-bus_time = params['bus_time']
-min_dur = params['min_duration']
-max_dur = params['max_duration']
-charge = params['charge_time']
-fast_charge = params['fast_charge_time']
-fuel = params['fuel_time']
+min_to_ts = params['min_to_ts']
 level_num = params['level_num']
-SF = level_num**2
+SF = level_num**2                   # SoC and FL in max level
+bus_num = params['bus_num']
+bus_time = int(params['bus_time'] * min_to_ts)
+min_dur = params['min_duration'] * min_to_ts
+max_dur = params['max_duration'] * min_to_ts
+charge = params['charge_time'] * min_to_ts if not params['charge_total'] else params['charge_total']/(level_num-1)*min_to_ts
+fast_charge = params['fast_charge_time'] * min_to_ts if not params['fast_charge_total'] else \
+    params['fast_charge_total']/(level_num-1)*min_to_ts
+fuel = params['fuel_time'] * min_to_ts if not params['fuel_total'] else params['fuel_total']/(level_num-1)*min_to_ts
 cs_num = params['cs_num']
 fast_cs_num = params['fast_cs_num']
 fs_num = params['fs_num']
@@ -36,7 +38,7 @@ if shape <= SF:
 else:
     value = shape
 time_delay = params['time_delay']
-travel_time = params['travel_time']
+travel_time = [[num * min_to_ts for num in sublist] for sublist in params['travel_time']]
 interlock = params['interlock']
 if interlock > cs_num:
     raise Exception('No more pair stations than cs')
@@ -47,7 +49,7 @@ if bus_num > cs_num:
 if fast_cs_num > cs_num:
     raise Exception('no more FCS than CS')
 emp_num = params['emp_num']
-emp_time = params['emp_time']
+emp_time = [[num * min_to_ts for num in sublist] for sublist in params['emp_time']]
 rep_num = params['repeat']
 rep_per_action = params['repeat_per_action']
 
@@ -319,7 +321,7 @@ def get_tt(req, assign):
     if not req:
         tt = travel_time[req][assign] if travel_time else 0
     elif interlock and req <= cs_num and assign < cs_num:
-        tt = travel_time[3]                                                      # travel inside pair stations
+        tt = travel_time[3][0]                                                      # travel inside pair stations
         tt_emp = tt if emp_num else 0
     elif (req <= cs_num and assign < cs_num) or (req > cs_num and assign >= cs_num):
         tt = 0            # fail

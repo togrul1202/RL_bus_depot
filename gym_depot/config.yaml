@@ -26,7 +26,7 @@ fuel_total: 10                     # total fuel time in minutes (must be 0 to us
 # levels
 level_num: 101                      # must be higher than 2
 
-# time:
+# time:   (in minutes)
 min_to_ts: 10                     # number of time steps in a minute
 min_duration: 360                  # min number of time gap (in minutes) between first and last arriving bus
 max_duration: 600                # max duration
@@ -45,13 +45,13 @@ emp_time:   [[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 
 inst: 0                                 # 0 for evaluation
 fail: -100
 win: 3000
-waiting_limit: 0                    # max total waiting time till the next request, if exceeded: fail
+waiting_limit: 0                    # max total waiting time till the next request (in minutes), if exceeded: fail
 repeat: 0
 repeat_per_action: 0
 
 # render fps:
 render_reset: 1
-render_fast: 1
+render_fast: 100
 render_slow: 0.2                # if fail or success
 
 # training:
@@ -67,11 +67,11 @@ tr_render: False
 total_steps: 1000          # * ten-thousand steps
 
 # evaluation:
-model_path_ev: 'models\training10\MPPO-1692726899/10000000'    # model path or name of rule based models
+model_path_ev: 'F:\home\uvijv\RL_bus_depot\models\training11\MPPO-1692796033\5500000'    # model path or name of rule based models
 ev_mask: True                                              # must be false unless model is MPPO
 results_dir: 'results/'
 episode_num: 100
 iteration_num: 5
 save_graph: false
 show_graph: true
-ev_render: false
+ev_render: true

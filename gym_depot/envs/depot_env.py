@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import math
+from pygame.locals import *
 
 import gymnasium as gym
 from gymnasium import spaces
@@ -250,7 +251,7 @@ class DepotEnv(gym.Env):
                 #     print(f'cs: {self.cs}\nfs: {self.fs}\ntd: {self.td}')
             if not terminated:
                 reward = self._get_reward(r)
-                if reward <= -params['waiting_limit'] and params['waiting_limit']:
+                if reward <= -params['waiting_limit']*min_to_ts and params['waiting_limit']:
                     self.info = 'waiting_limit_exceeded'
                     terminated = True
                 self.ter_num -= 1 if self.ter_num and rep_per_action else 0
@@ -327,15 +328,15 @@ class DepotEnv(gym.Env):
 
         # color info
         colors = ['green', 'grey', 'pink', 'blue', 'yellow', 'red', 'brown']
-        color_info = ['empty', 'bus not arrived', 'employee not arrived', 'charging/fueling', 'request to go',
-                      'request delayed', 'charging and fueling finished']
+        color_info = ['empty', 'bus not arrived', 'employee not arrived', 'recharging/refueling', 'request to go',
+                      'request delayed', 'recharging and refueling finished']
 
         # actions
         if action is not None:
             if action < cs_num:
                 action = 'CS ' + str(action+1)
             else:
-                action = 'FS ' + str(action-cs_num+1)
+                action = 'GS ' + str(action-cs_num+1)
 
         # stations
         station = ''
@@ -372,21 +373,35 @@ class DepotEnv(gym.Env):
         time_surface = font.render(time, True, brown_text)
         screen.blit(time_surface, time_loc)
 
-        # employee
+        # employee info
         if emp_num:
             emp = 'number of available employees: ' + str(self.av_emp)
             emp_loc = (450, 160)
             emp_surface = font.render(emp, True, brown_text)
             screen.blit(emp_surface, emp_loc)
 
-        # color info
+        # station info
         font_size = 20
         font_color = black
         font = pygame.font.Font(None, font_size)
-        info_x = 550
+        cs_info = 'CS: Charging Station'
+        fs_info = 'GS: Gas Station'
+        soc_info = 'SoC: State of Charge'
+        fl_info = 'FL: Fuel Level'
+        st_info = [cs_info, fs_info, soc_info, fl_info]
+        st_x = 650
+        st_y = 10
+        for idx, txt in enumerate(st_info):
+            text = txt
+            text_loc = (st_x, st_y+17*idx)
+            text_surface = font.render(text, True, font_color)
+            screen.blit(text_surface, text_loc)
+
+        # color info
+        info_x = 450
         for idx, color in enumerate(colors):
             color_text = color + ': ' + color_info[idx]
-            color_text_loc = (info_x, 17*idx)
+            color_text_loc = (info_x, 10+17*idx)
             color_text_surface = font.render(color_text, True, font_color)
             screen.blit(color_text_surface, color_text_loc)
         # last_loc = 19*(idx+1)
@@ -440,7 +455,7 @@ class DepotEnv(gym.Env):
         # CS
         ki = 0
         for idx, val in enumerate(self.cs_render):
-            cs_name = 'CS ' + str(idx + 1) if idx >= fast_cs_num else 'FCS ' + str(idx + 1)
+            cs_name = 'CS ' + str(idx + 1) if idx >= fast_cs_num else 'CS ' + str(idx + 1) + ' (fast)'
             if val:
                 soc, fl = soc_and_fl(val)
                 cs_text = 'SoC: ' + str(soc) + ', FL: ' + str(fl)
@@ -528,7 +543,7 @@ class DepotEnv(gym.Env):
             )
             fs_text_surface = font.render(fs_text, True, font_color)
             screen.blit(fs_text_surface, fs_text_loc[idx])
-            fs_name = 'FS ' + str(idx+1)
+            fs_name = 'GS ' + str(idx+1)
             if action and self.req_render == idx+cs_num+1:
                 station = fs_name
                 fs_name += '  go to ' + str(action)
@@ -565,6 +580,13 @@ class DepotEnv(gym.Env):
         # We need to ensure that human-rendering occurs at the predefined framerate.
         # The following line will automatically add a delay to keep the framerate stable.
         self.clock.tick(self.metadata["render_fps"])
+
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                self.close()
+            elif event.type == KEYDOWN:
+                if event.key == K_q:
+                    self.close()
 
     def close(self):
         if self.window is not None:

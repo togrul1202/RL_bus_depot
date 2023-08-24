@@ -139,4 +139,4 @@ if params['save_graph']:
 if params['show_graph']:
     plt.show()
 
-print(f'fail list: {fail_list}\nargs: {np.argwhere(fail_list==it_num)}')
+print(f'fail list: {fail_list}\nargs: {np.argwhere(fail_list==it_num) or np.argmax(fail_list)}')

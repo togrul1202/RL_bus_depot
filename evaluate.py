@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 from statistics import mean
+import time
 
 import gymnasium
 import gym_depot
@@ -39,7 +40,8 @@ if name != 'manual' and name != 'manual_inv':
     output_dir = os.path.join(result_dir, name_dir.parent.parent.name, name_dir.parent.name, name_dir.stem)
 else:
     output_dir = os.path.join(result_dir, name)
-os.makedirs(output_dir, exist_ok=True)
+if params['save_graph']:
+    os.makedirs(output_dir, exist_ok=True)
 
 episodes = params['episode_num']
 fail_list = np.zeros(episodes)
@@ -47,6 +49,7 @@ it_num = params['iteration_num']
 mean_pun_list = []
 fail_percent = []
 for it in range(it_num):
+    t = time.time()
     episodes_up = episodes
     tot_rew = 0
     rew_diff = []
@@ -99,6 +102,7 @@ for it in range(it_num):
     fail_percent.append(fail*100/episodes)
     print(f'mean rew: {mean_rew}\navg time steps waited: {mean_pun}\nnumber of fails: {fail}/{episodes_up}\nfails: {fail_dict}',
           f'mean number: {mean_number}')
+    print(f"Time spent : {time.time() - t:.2f}s")
 
     if it == 0:
         plt.figure()

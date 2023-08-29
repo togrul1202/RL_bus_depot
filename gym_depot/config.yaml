@@ -11,7 +11,7 @@ emp_num: 3  # int/false
 
 # CS:
 cs_num: 27
-fast_cs_num: 4              # fast CS (first indexes of cs_num)
+fast_cs_num: 4              # fast CS (first indexes of cs)
 interlock: 22               # of regular CS
 charge_time: 3                 # time (in minutes) needed to charge to the next level (must be int in time steps)
 fast_charge_time: 2             # in minutes
@@ -24,7 +24,7 @@ fuel_time: 0.1                     # time needed to fuel (in minutes) to the nex
 fuel_total: 10                     # total fuel time in minutes (must be 0 to use level time)
 
 # levels
-level_num: 101                      # must be higher than 2
+level_num: 101                      # must be higher than 2 (i.e 101 corresponds to 100 levels)
 
 # time:   (in minutes)
 min_to_ts: 10                     # number of time steps in a minute
@@ -57,7 +57,7 @@ render_slow: 0.2                # if fail or success
 # training:
 sb3_model: MPPO                  # MaskablePPO = MPPO
 mask: True                      # must be false unless model is MPPO (=PPO without mask)
-training: 'training11/'
+training: 'training12/'
 ent_coef: 0
 models_dir: 'models/'
 logs_dir: 'logs/'
@@ -67,11 +67,14 @@ tr_render: False
 total_steps: 1000          # * ten-thousand steps
 
 # evaluation:
-model_path_ev: 'F:\home\uvijv\RL_bus_depot\models\training11\MPPO-1692796033\5500000'    # model path or name of rule based models
+model_path_ev: 'models\training11\MPPO-1692796033\5500000'    # model path or name of rule based models
 ev_mask: True                                              # must be false unless model is MPPO
 results_dir: 'results/'
 episode_num: 100
 iteration_num: 5
 save_graph: false
 show_graph: true
-ev_render: true
+ev_render: false
+
+# no_valid_action handling: can ONLY be used for training and evaluation of MPPO
+check_mask: true

@@ -158,7 +158,7 @@ class DepotEnv(gym.Env):
     def _check_entrance(self):
         if len(self.ent_config):
             if self.ent_config[0]:
-                self.ent_config, self.ent = ent_update(self.ent_config, self.ent, self.td)
+                ent_update(self)
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
@@ -178,7 +178,7 @@ class DepotEnv(gym.Env):
         self.cs = np.zeros(cs_num, dtype=int)
         self.fs = np.zeros(fs_num, dtype=int)
         self.ent_config = ent_array(seed)
-        self.ent_config, self.ent = ent_update(self.ent_config, self.ent, self.td)
+        ent_update(self)
 
         self.mask_fail = False
         self.emp_loc = np.zeros(total, dtype=int)
@@ -215,7 +215,7 @@ class DepotEnv(gym.Env):
             # calculate states from the action
             self._goto(action)
             # update availability
-            self.av = av_state(self.av, self.cs, self.fs)
+            av_state(self)
             # perform the updates(ent_config, cl, fl) and get the next request
             while self.req == total:
                 if step >= 10000:
@@ -228,10 +228,7 @@ class DepotEnv(gym.Env):
                     truncated = False
                     step += 1
                 self._check_entrance()
-                (self.req, self.av, self.ent, self.ent_config, self.cs, self.fs, self.ts,
-                 self.td, self.tt, self.tt_emp, self.av_emp, self.emp_tt, self.emp_loc, self.emp_timer) = update(self.req,
-                    self.av, self.ent, self.ent_config, self.cs, self.fs, self.ts, self.td, self.tt, self.tt_emp,
-                    self.av_emp, self.emp_tt, self.emp_loc, self.emp_timer)
+                update(self)
                 if self.render_mode == "human":
                     self._render_frame()
                 #print(f'emp_loc: {self.emp_loc}')
@@ -244,7 +241,7 @@ class DepotEnv(gym.Env):
                     #print('success')
                     if emp_num:
                         if self.av_emp == emp_num and self.tt.any() or self.av_emp > emp_num:
-                            print('emp number exceeded: check the code')
+                            print('Warning: emp number exceeded')
                     break
                 # elif self.req == total:
                 #     print('1 ts passed')
@@ -265,37 +262,12 @@ class DepotEnv(gym.Env):
 
         return observation, reward, terminated, truncated, info
 
-    def get_action_mask(self):
-        array = np.array([[self.check_action_validity(a) for a in range(total_st)]])
-        if not array.any():
+    def get_action_mask(self, check=False):
+        array = np.array([[check_action_validity(self, a, check) for a in range(total_st)]])
+        if not array.any() and not check:
             self.mask_fail = True
             array = np.array([[True for a in range(total_st)]])
         return array
-
-    def check_action_validity(self, action):
-        obs = self._get_obs()
-        state = self._get_state()
-        lock, lock_crash, stuck = check_interlock(action, self.req, self.av, self.cs, state)
-        wrong_fs = action >= cs_num >= self.req != 0 and self.cs[self.req - 1] == SF
-        wrong_cs = self.req <= cs_num and self.req != 0 and (action < cs_num and action < interlock and action % 2)
-        if obs[action + 1]:
-            return False                                    # avoid crash
-        if lock_crash:
-            return False
-        if stuck:
-            return False
-        if not self.req:
-            return True
-        elif self.req <= cs_num and action < cs_num and not lock and self.cs[self.req - 1] != SF:
-            return False                                    # avoid same_cs
-        elif self.req > cs_num and action >= cs_num:
-            return False                                    # avoid same_fs
-        elif wrong_fs:
-            return False
-        elif wrong_cs:
-            return False
-        else:
-            return True
 
     def render(self):
         if self.render_mode == "rgb_array":

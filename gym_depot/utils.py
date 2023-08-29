@@ -94,128 +94,129 @@ def add_waiting(arr, bt):
     return arr
 
 
-def ent_update(ent_config, ent, td):
-    if len(ent_config):
-        if not ent:
-            if ent_config[0]:
-                ent = np.random.choice([a for a in range(SF-level_num) if a % level_num])  # self.ent_config[0]
-                #print(f'ent: {ent}')
-            del ent_config[0]
+def ent_update(self):
+    if len(self.ent_config):
+        if not self.ent:
+            if self.ent_config[0]:
+                self.ent = np.random.choice([a for a in range(SF-level_num) if a % level_num])  # self.ent_config[0]
+                #print(f'self.ent: {self.ent}')
+            del self.ent_config[0]
         else:
-            if 0 in ent_config and td[0]:
-                ent_config.remove(0)
-    return ent_config, ent
+            if 0 in self.ent_config and self.td[0]:
+                self.ent_config.remove(0)
+    return self.ent_config, self.ent
 
 
-def cs_update(cs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc):
-    for idx, cs in enumerate(cs_arr):
+def cs_update(self):
+    for idx, cs in enumerate(self.cs):
         emp_in = False
-        if emp_tt[idx] < 0:                                         # waiting for employee
+        if self.emp_tt[idx] < 0:                                         # waiting for employee
             continue
-        elif tt[idx] or tt_emp[idx]:
-            if tt_emp[idx] == tt[idx] != 0:                        # employee in a bus
+        elif self.tt[idx] or self.tt_emp[idx]:
+            if self.tt_emp[idx] == self.tt[idx] != 0:                        # employee in a bus
                 emp_in = True
-                tt_emp[idx] -= 1
-                if not tt_emp[idx] and cs_arr[idx]:
+                self.tt_emp[idx] -= 1
+                if not self.tt_emp[idx] and self.cs[idx]:
                     if idx < interlock and not idx % 2:
-                        if not (tt[idx+1] and not cs_arr[idx+1]):           # on travel request: no extra emp
-                            av_emp += 1
-                            emp_loc[idx + 1] += 1
+                        if not (self.tt[idx+1] and not self.cs[idx+1]):           # on travel request: no extra emp
+                            self.av_emp += 1
+                            self.emp_loc[idx + 1] += 1
                     else:
-                        av_emp += 1
-                        emp_loc[idx+1] += 1
+                        self.av_emp += 1
+                        self.emp_loc[idx+1] += 1
             if idx < interlock and not idx % 2:
-                if not (tt[idx+1] and not cs_arr[idx+1]):
-                    if not tt[idx] or tt_emp[idx] < 0:
-                        print(tt_emp[idx])
-                    tt[idx] -= 1
+                if not (self.tt[idx+1] and not self.cs[idx+1]):
+                    if not self.tt[idx] or self.tt_emp[idx] < 0:
+                        print(self.tt_emp[idx])
+                    self.tt[idx] -= 1
                 else:                                            # on travel request: no extra waiting for next station
-                    tt[idx] = tt[idx+1]
-                    tt[idx+1] = 0
+                    self.tt[idx] = self.tt[idx+1]
+                    self.tt[idx+1] = 0
                     if emp_num:
-                        tt_emp[idx + 1] = tt[idx + 1]
+                        self.tt_emp[idx + 1] = self.tt[idx + 1]
                         if emp_in:
-                            tt_emp[idx] = tt[idx]
-                            tt_emp[idx] -= 1
-                        if not tt_emp[idx] and cs_arr[idx]:
-                            av_emp += 1
-                            emp_loc[idx+1] += 1
-                    if not tt[idx] or tt_emp[idx] < 0:
-                        print(tt_emp[idx])
-                    tt[idx] -= 1
+                            self.tt_emp[idx] = self.tt[idx]
+                            self.tt_emp[idx] -= 1
+                        if not self.tt_emp[idx] and self.cs[idx]:
+                            self.av_emp += 1
+                            self.emp_loc[idx+1] += 1
+                    if not self.tt[idx] or self.tt_emp[idx] < 0:
+                        print(self.tt_emp[idx])
+                    self.tt[idx] -= 1
             else:
-                if not tt[idx] or tt_emp[idx] < 0:
-                    print(tt_emp[idx])
-                tt[idx] -= 1
-            ts[idx + 1] = 0
+                if not self.tt[idx] or self.tt_emp[idx] < 0:
+                    print(self.tt_emp[idx])
+                self.tt[idx] -= 1
+            self.ts[idx + 1] = 0
         else:
             if cs != 0 and cs <= SF-level_num:
                 if idx < fast_cs_num:
-                    if ts[idx + 1] == fast_charge:
-                        cs_arr[idx] += level_num
-                        ts[idx + 1] = 0
+                    if self.ts[idx + 1] == fast_charge:
+                        self.cs[idx] += level_num
+                        self.ts[idx + 1] = 0
                 else:
-                    if ts[idx+1] == charge:
-                        cs_arr[idx] += level_num
-                        ts[idx+1] = 0
+                    if self.ts[idx+1] == charge:
+                        self.cs[idx] += level_num
+                        self.ts[idx+1] = 0
             else:
-                ts[idx+1] = 0
-    return cs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc
+                self.ts[idx+1] = 0
+    return self.cs, self.ts, self.tt, self.tt_emp, self.av_emp, self.emp_tt, self.emp_loc
 
 
-def fs_update(fs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc):
-    for idx, fs in enumerate(fs_arr):
-        if emp_tt[idx+cs_num] < 0:
+def fs_update(self):
+    for idx, fs in enumerate(self.fs):
+        if self.emp_tt[idx+cs_num] < 0:
             continue
-        elif tt[idx+cs_num] or tt_emp[idx+cs_num]:
-            if tt_emp[idx+cs_num] == tt[idx+cs_num] != 0:                        # employee in a bus
-                tt_emp[idx+cs_num] -= 1
-                if not tt_emp[idx+cs_num]:
-                    av_emp += 1
-                    emp_loc[idx+1+cs_num] += 1
-            tt[idx+cs_num] -= 1
-            ts[idx+1+cs_num] = 0
+        elif self.tt[idx+cs_num] or self.tt_emp[idx+cs_num]:
+            if self.tt_emp[idx+cs_num] == self.tt[idx+cs_num] != 0:                        # employee in a bus
+                self.tt_emp[idx+cs_num] -= 1
+                if not self.tt_emp[idx+cs_num]:
+                    self.av_emp += 1
+                    self.emp_loc[idx+1+cs_num] += 1
+            self.tt[idx+cs_num] -= 1
+            self.ts[idx+1+cs_num] = 0
         else:
             if fs % level_num != 0 and fs != 0:
-                if ts[idx+1+cs_num] == fuel:
-                    fs_arr[idx] += 1
-                    ts[idx+1+cs_num] = 0
+                if self.ts[idx+1+cs_num] == fuel:
+                    self.fs[idx] += 1
+                    self.ts[idx+1+cs_num] = 0
             else:
-                ts[idx+1+cs_num] = 0
-    return fs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc
+                self.ts[idx+1+cs_num] = 0
+    return self.fs, self.ts, self.tt, self.tt_emp, self.av_emp, self.emp_tt, self.emp_loc
 
 
-def delay_update(td, ent, av, cs_arr, fs_arr, av_emp, emp_tt):
-    if ent and 0 not in av:
-        td[0] += 1
-    for idx, cs in enumerate(cs_arr):
+def delay_update(self):
+    if self.ent:
+        mask_arr = np.array([[check_action_validity(self, a, check=True) for a in range(total_st)]]) \
+            if params['check_mask'] else np.array([True])
+        if 0 not in self.av or not mask_arr.any():
+            self.td[0] += 1
+    for idx, cs in enumerate(self.cs):
         if cs > SF-level_num and cs != SF:
-            if 0 not in av[cs_num:] or not av_emp or emp_tt[idx] or (idx % 2 and idx < interlock and av[idx - 1]):
-                td[idx + 1] += 1
-    for idx, fs in enumerate(fs_arr):
-        if fs % level_num == 0 and fs != 0 and (0 not in av[:cs_num] or not av_emp or emp_tt[idx+cs_num]):
-            td[idx+1+cs_num] += 1
-    return td
+            if 0 not in self.av[cs_num:] or not self.av_emp or self.emp_tt[idx] or (idx % 2 and idx < interlock and self.av[idx - 1]):
+                self.td[idx + 1] += 1
+    for idx, fs in enumerate(self.fs):
+        if fs % level_num == 0 and fs != 0 and (0 not in self.av[:cs_num] or not self.av_emp or self.emp_tt[idx+cs_num]):
+            self.td[idx+1+cs_num] += 1
 
 
-def emp_tt_update(cs_arr, fs_arr, emp_tt, tt, tt_emp):
-    for idx, t in enumerate(emp_tt):                           # on travel req: don't wait for an employee
-        if idx < interlock and not idx % 2 and tt[idx+1] and emp_tt[idx] == -(idx+2):
-            emp_tt[idx] = 0
-            emp_tt[idx+1] = 0
-            cs_arr[idx+1] = 0
+def emp_tt_update(self):
+    for idx, t in enumerate(self.emp_tt):                           # on travel req: don't wait for an employee
+        if idx < interlock and not idx % 2 and self.tt[idx+1] and self.emp_tt[idx] == -(idx+2):
+            self.emp_tt[idx] = 0
+            self.emp_tt[idx+1] = 0
+            self.cs[idx+1] = 0
         elif t > 0:
-            emp_tt[idx] -= 1
-            if not emp_tt[idx]:
-                tt[emp_tt == -(idx + 1)] += 1
-                tt_emp[emp_tt == -(idx + 1)] = tt[emp_tt == -(idx + 1)]
-                emp_tt[emp_tt == -(idx + 1)] = 0
+            self.emp_tt[idx] -= 1
+            if not self.emp_tt[idx]:
+                self.tt[self.emp_tt == -(idx + 1)] += 1
+                self.tt_emp[self.emp_tt == -(idx + 1)] = self.tt[self.emp_tt == -(idx + 1)]
+                self.emp_tt[self.emp_tt == -(idx + 1)] = 0
                 if idx < cs_num:
-                    cs_arr[idx] = 0
+                    self.cs[idx] = 0
                 else:
-                    fs_arr[idx-cs_num] = 0
-    #print(f'emp_tt: {emp_tt}\ncs_arr: {cs_arr}\nfs_arr: {fs_arr}')
-    return cs_arr, fs_arr, emp_tt, tt, tt_emp
+                    self.fs[idx-cs_num] = 0
+    #print(f'self.emp_tt: {self.emp_tt}\nself.cs: {self.cs}\nself.fs: {self.fs}')
 
 
 def find_closest_emp(destination, station, emp_tt, emp_loc):                     # finds emp and send him to the destination
@@ -246,74 +247,73 @@ def find_closest_emp(destination, station, emp_tt, emp_loc):                    
     return emp_tt, emp_loc
 
 
-def emp_to_sb(emp_loc, emp_timer):
-    emp_timer = np.multiply(emp_timer, emp_loc[1:])                # reset timer of unavailable employees
-    for loc, emp in enumerate(emp_loc):
+def emp_to_sb(self):
+    self.emp_timer = np.multiply(self.emp_timer, self.emp_loc[1:])                # reset timer of unavailable employees
+    for loc, emp in enumerate(self.emp_loc):
         if loc and emp:
-            if emp_timer[loc-1] >= emp_time[0][loc-1]/2:           # consider emp at SB if half of the emp_time the last loc to SB passed
-                emp_loc[loc] -= 1
-                emp_loc[0] += 1
+            if self.emp_timer[loc-1] >= emp_time[0][loc-1]/2:           # consider emp at SB if half of the emp_time the last loc to SB passed
+                self.emp_loc[loc] -= 1
+                self.emp_loc[0] += 1
             else:
-                emp_timer[loc-1] += 1
-    return emp_loc, emp_timer
+                self.emp_timer[loc-1] += 1
 
 
-def update(req, av, ent, ent_config, cs_arr, fs_arr, ts, td, tt, tt_emp, av_emp, emp_tt, emp_loc, emp_timer):
-    req, av_emp = request(req, av, ent, cs_arr, fs_arr, av_emp, emp_tt, tt)  # get request
-    if req == total:
-        ts += 1
-        #print(ts)
-        td = delay_update(td, ent, av, cs_arr, fs_arr, av_emp, emp_tt)  # update td
-        emp_loc, emp_timer = emp_to_sb(emp_loc, emp_timer)        # employee goes back to SB
+def update(self):
+    request(self)  # get request
+    if self.req == total:
+        self.ts += 1
+        #print(self.ts)
+        delay_update(self)  # update td
+        emp_to_sb(self)        # employee goes back to SB
         if emp_num and emp_time:
-            cs_arr, fs_arr, emp_tt, tt, tt_emp = emp_tt_update(cs_arr, fs_arr, emp_tt, tt, tt_emp)  # update emp_tt and reset cs and fs if zero
-            av = av_state(av, cs_arr, fs_arr)
-        ent_config, ent = ent_update(ent_config, ent, td)  # update ent_config
-        cs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc = cs_update(cs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc)  # update cl
-        fs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc = fs_update(fs_arr, ts, tt, tt_emp, av_emp, emp_tt, emp_loc)  # update fl
-        #print(f'emp_av: {av_emp}\nemp_tt: {emp_tt}\ntt: {tt}\ntt_emp: {tt_emp}\ntd: {td}')
-    return req, av, ent, ent_config, cs_arr, fs_arr, ts, td, tt, tt_emp, av_emp, emp_tt, emp_loc, emp_timer
+            emp_tt_update(self)  # update emp_tt and reset cs and fs if zero
+            av_state(self)
+        ent_update(self)  # update ent_config
+        cs_update(self)  # update cl
+        fs_update(self)  # update fl
+        #print(f'emp_av: {self.av_emp}\nself.emp_tt: {self.emp_tt}\nself.tt: {self.tt}\nself.tt_emp: {self.tt_emp}\nself.td: {td}')
 
 
-def av_state(av, cs_arr, fs_arr):
-    for idx, cs in enumerate(cs_arr):
+def av_state(self):
+    for idx, cs in enumerate(self.cs):
         if cs:
-            av[idx] = 1
+            self.av[idx] = 1
             if idx % 2 and idx < interlock:
-                av[idx - 1] = 1
+                self.av[idx - 1] = 1
         else:
-            av[idx] = 0
-    for idx, fs in enumerate(fs_arr):
-        av[idx+cs_num] = 1 if fs else 0
-    return av
+            self.av[idx] = 0
+    for idx, fs in enumerate(self.fs):
+        self.av[idx+cs_num] = 1 if fs else 0
 
 
-def request(req, av, ent, cs_arr, fs_arr, av_emp, emp_tt, tt):
+def request(self):
     for i in req_order:
-        if i == 0 and req == total and ent and 0 in av:
-            req = 0
+        if i == 0 and self.req == total and self.ent and 0 in self.av:
+            mask_arr = np.array([[check_action_validity(self, a, check=True) for a in range(total_st)]]) \
+                if params['check_mask'] else np.array([True])
+            if mask_arr.any():
+                self.req = 0
 
-        if i == 1 and req == total and av_emp:
-            for idx, cs in enumerate(cs_arr):
-                if not emp_tt[idx]:                        # avoid requesting again while waiting for an employee
+        if i == 1 and self.req == total and self.av_emp:
+            for idx, cs in enumerate(self.cs):
+                if not self.emp_tt[idx]:                        # avoid requesting again while waiting for an employee
                     if idx % 2 and idx < interlock and cs > SF-level_num:
-                        if not cs_arr[idx-1] and not tt[idx-1]:
-                            req = idx + 1
-                            if not tt[idx]:                 # on travel request: don't ask for another employee
-                                av_emp = av_emp - 1 if emp_num else 1
+                        if not self.cs[idx-1] and not self.tt[idx-1]:
+                            self.req = idx + 1
+                            if not self.tt[idx]:                 # on travel request: don't ask for another employee
+                                self.av_emp = self.av_emp - 1 if emp_num else 1
                             break
-                    elif (cs > SF-level_num and cs != SF) and 0 in av[cs_num:]:
-                        req = idx+1
-                        av_emp = av_emp - 1 if emp_num else 1
+                    elif (cs > SF-level_num and cs != SF) and 0 in self.av[cs_num:]:
+                        self.req = idx+1
+                        self.av_emp = self.av_emp - 1 if emp_num else 1
                         break
 
-        if i == 2 and req == total and av_emp:
-            for idx, fs in enumerate(fs_arr):
-                if fs % level_num == 0 and fs != 0 and 0 in av[:cs_num] and not emp_tt[idx+cs_num]:
-                    req = idx+1+cs_num
-                    av_emp = av_emp - 1 if emp_num else 1
+        if i == 2 and self.req == total and self.av_emp:
+            for idx, fs in enumerate(self.fs):
+                if fs % level_num == 0 and fs != 0 and 0 in self.av[:cs_num] and not self.emp_tt[idx+cs_num]:
+                    self.req = idx+1+cs_num
+                    self.av_emp = self.av_emp - 1 if emp_num else 1
                     break
-    return req, av_emp
 
 
 def get_tt(req, assign):
@@ -358,3 +358,38 @@ def soc_and_fl(info):
     soc = (math.floor((info - 1) / level_num)) * 100 / (level_num - 1)
     fl = ((info-1) % level_num) * 100 / (level_num - 1)
     return int(soc), int(fl)
+
+
+def check_action_validity(self, action, check):
+    req = 0 if check else self.req
+    obs = np.hstack([self.ent, self.cs, self.fs, self.req])
+    obs = np.array(obs, dtype=int)
+    if not req:
+        state_info = self.ent
+    elif req <= cs_num:
+        state_info = self.cs[req - 1]
+    elif req > cs_num and req != total:
+        state_info = self.fs[req - (cs_num + 1)]
+    else:
+        state_info = 0
+    lock, lock_crash, stuck = check_interlock(action, req, self.av, self.cs, state_info)
+    wrong_fs = action >= cs_num >= req != 0 and self.cs[req - 1] == SF
+    wrong_cs = req <= cs_num and req != 0 and (action < cs_num and action < interlock and action % 2)
+    if obs[action + 1]:
+        return False                                    # avoid crash
+    if lock_crash:
+        return False
+    if stuck:
+        return False
+    if not req:
+        return True
+    elif req <= cs_num and action < cs_num and not lock and self.cs[req - 1] != SF:
+        return False                                    # avoid same_cs
+    elif req > cs_num and action >= cs_num:
+        return False                                    # avoid same_fs
+    elif wrong_fs:
+        return False
+    elif wrong_cs:
+        return False
+    else:
+        return True

@@ -32,14 +32,14 @@ min_duration: 360                  # min number of time gap (in minutes) between
 max_duration: 600                # max duration
 bus_time: 0.1                       # number of time gap (in minutes) between two simultaneously arrived buses
 time_delay: 1          # 1 for eval           # number of time steps considered as delay
-travel_time: [[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],  # ENT to a station
-              [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],        # FS1 to CS
-              [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],        # FS2 to CS
-              [2]]    # CS to CS (only interlock)
-emp_time:   [[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3], # emp travel from SB to a station
-              [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],      # emp travel from FS1 to a CS
-              [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],      # emp travel from FS2 to a CS
-              [3, 3, 1]]      # emp travel FS TO FS, CS TO CS, CS TO CLOSE CS: can be defined
+travel_time: [[0.7, 0.7, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.9, 0.8],  # ENT to a station
+              [0.6, 0.6, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],        # FS1 to CS
+              [0.8, 0.8, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8],        # FS2 to CS
+              [0.1]]    # CS to CS (only interlock)
+emp_time:   [[0.9, 0.8, 0.7, 0.6, 0.5, 0.6, 0.5, 0.6, 0.5, 0.6, 0.6, 0.7, 0.6, 0.7, 0.6, 0.7, 0.7, 0.8, 0.7, 0.8, 0.7, 0.8, 0.8, 0.8, 0.9, 0.9, 0.9, 0.5, 0.7], # emp travel from SB to a station
+              [1.0, 0.9, 0.8, 0.7, 0.6, 0.7, 0.6, 0.7, 0.6, 0.7, 0.7, 0.8, 0.7, 0.8, 0.7, 0.8, 0.8, 0.9, 0.8, 0.9, 0.8, 0.9, 0.9, 0.9, 1.0, 1.0, 1.0],      # emp travel from FS1 to a CS
+              [1.2, 1.1, 1, 0.9, 0.6, 0.7, 0.6, 0.7, 0.6, 0.7, 0.7, 0.8, 0.7, 0.8, 0.7, 0.8, 0.8, 0.9, 0.8, 0.9, 0.8, 0.9, 1, 1, 1, 1.1, 1.1],      # emp travel from FS2 to a CS
+              [0.6, 0.6]]      # emp travel FS TO FS, average CS TO CS
 
 # reward:
 inst: 0                                 # 0 for evaluation
@@ -62,18 +62,18 @@ ent_coef: 0
 models_dir: 'models/'
 logs_dir: 'logs/'
 checkpoint: ''                  # resume training
-device: cuda:1
-tr_render: False
-total_steps: 1000          # * ten-thousand steps
+device: cpu
+tr_render: true
+total_steps: 26          # * ten-thousand steps
 
 # evaluation:
-model_path_ev: 'models\training11\MPPO-1692796033\5500000'    # model path or name of rule based models
+model_path_ev: 'models/training13/MPPO-1694899674/5000000'    # model path or name of rule based models
 ev_mask: True                                              # must be false unless model is MPPO
 results_dir: 'results/'
-episode_num: 100
-iteration_num: 5
+episode_num: 1000
+iteration_num: 2
 save_graph: false
-show_graph: true
+show_graph: false
 ev_render: false
 
 # no_valid_action handling: can ONLY be used for training and evaluation of MPPO

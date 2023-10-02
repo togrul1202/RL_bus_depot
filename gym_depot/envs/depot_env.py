@@ -30,6 +30,8 @@ class DepotEnv(gym.Env):
         self.cs = np.zeros(cs_num, dtype=int)              # CS values
         self.fs = np.zeros(fs_num, dtype=int)              # FS values
         self.ent_config = np.zeros(len(ent_array())).tolist()
+        self.ent_len = 0
+        self.ex_time = []
 
         self.mask_fail = False
         self.emp_loc = np.zeros(total, dtype=int)           # location of available employees [0]: SB
@@ -54,7 +56,7 @@ class DepotEnv(gym.Env):
         return obs
 
     def _get_info(self):
-        return {"info": self.info}
+        return {"info": self.info, "exceed time": self.ts[0]-max(self.ex_time), "exceeded time": self.ts[0]-self.ent_len}
 
     def _get_state(self):
         if not self.req:
@@ -178,6 +180,8 @@ class DepotEnv(gym.Env):
         self.cs = np.zeros(cs_num, dtype=int)
         self.fs = np.zeros(fs_num, dtype=int)
         self.ent_config = ent_array(seed)
+        self.ent_len = len(self.ent_config)
+        self.ex_time = []
         ent_update(self)
 
         self.mask_fail = False
@@ -233,6 +237,7 @@ class DepotEnv(gym.Env):
                     self._render_frame()
                 #print(f'emp_loc: {self.emp_loc}')
                 if self.req == total and sum(self.cs) == SF*bus_num and not self.emp_tt.any() and not sum(self.fs):
+                    # print(self.ts[0]-max(self.ex_time))
                     reward = win - self._get_delay()
                     terminated = True
                     self.metadata["render_fps"] = params['render_slow']
@@ -308,7 +313,7 @@ class DepotEnv(gym.Env):
             if action < cs_num:
                 action = 'CS ' + str(action+1)
             else:
-                action = 'GS ' + str(action-cs_num+1)
+                action = 'HS ' + str(action-cs_num+1)
 
         # stations
         station = ''
@@ -357,7 +362,7 @@ class DepotEnv(gym.Env):
         font_color = black
         font = pygame.font.Font(None, font_size)
         cs_info = 'CS: Charging Station'
-        fs_info = 'GS: Gas Station'
+        fs_info = 'HS: Hydrogen Station'
         soc_info = 'SoC: State of Charge'
         fl_info = 'FL: Fuel Level'
         st_info = [cs_info, fs_info, soc_info, fl_info]
@@ -439,13 +444,13 @@ class DepotEnv(gym.Env):
                 if failed:
                     cs_name += ' -> ' + self.info
             if self.td_render[idx + 1]:
-                if self.emp_tt[idx]:
-                    cs_color[idx] = grey if self.tt_render[idx] else pink
-                elif not self.cs[idx]:
+                if not self.cs[idx]:
                     cs_color[idx] = green
                 else:
                     cs_color[idx] = grey if self.tt_render[idx] else red
                 cs_text = cs_text + ', delay: ' + str(self.td_render[idx+1]) if not success else ''
+            elif self.emp_tt[idx]:
+                cs_color[idx] = grey if self.tt_render[idx] else pink
             elif self.tt_render[idx]:
                 cs_color[idx] = grey
             elif val == SF:
@@ -495,15 +500,15 @@ class DepotEnv(gym.Env):
             else:
                 fs_text = ''
             if self.td_render[idx+1+cs_num]:
-                if self.emp_tt[idx+cs_num]:
-                    fs_color[idx] = pink
-                elif not self.fs[idx]:
+                if not self.fs[idx]:
                     fs_color[idx] = green
                 else:
                     fs_color[idx] = red
                 fs_text = fs_text + ', delay: ' + str(self.td_render[idx + cs_num + 1]) if not success else ''
             elif self.tt_render[idx+cs_num]:
                 fs_color[idx] = grey
+            elif self.emp_tt[idx + cs_num]:
+                fs_color[idx] = pink
             elif val % level_num:
                 fs_color[idx] = blue
             elif val:
@@ -515,7 +520,7 @@ class DepotEnv(gym.Env):
             )
             fs_text_surface = font.render(fs_text, True, font_color)
             screen.blit(fs_text_surface, fs_text_loc[idx])
-            fs_name = 'GS ' + str(idx+1)
+            fs_name = 'HS ' + str(idx+1)
             if action and self.req_render == idx+cs_num+1:
                 station = fs_name
                 fs_name += '  go to ' + str(action)
@@ -535,14 +540,18 @@ class DepotEnv(gym.Env):
                 self.td_total += sum(self.td)
                 info = 'total waiting time: ' + str(round(self.td_total/min_to_ts, 2)) + ' minutes'
                 color = green
+                info1 = 'after last arrival: ' + str((self.ts[0]-self.ent_len)/min_to_ts) + ' minutes'
             text_loc = (400, 400)
             info_loc = (400, 450)
+            info1_loc = (400, 480)
             font = pygame.font.Font(None, 50)
             fail_surface = font.render(text, True, color)
             screen.blit(fail_surface, text_loc)
             font = pygame.font.Font(None, 30)
             fail_surface = font.render(info, True, color)
             screen.blit(fail_surface, info_loc)
+            fail_surface = font.render(info1, True, color)
+            screen.blit(fail_surface, info1_loc)
 
         # The following line copies our drawings from `screen` to the visible window
         self.window.blit(screen, screen.get_rect())

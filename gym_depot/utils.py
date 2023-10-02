@@ -38,7 +38,7 @@ if shape <= SF:
 else:
     value = shape
 time_delay = params['time_delay']
-travel_time = [[num * min_to_ts for num in sublist] for sublist in params['travel_time']]
+travel_time = [[num * min_to_ts * 2 for num in sublist] for sublist in params['travel_time']]
 interlock = params['interlock']
 if interlock > cs_num:
     raise Exception('No more pair stations than cs')
@@ -100,6 +100,11 @@ def ent_update(self):
             if self.ent_config[0]:
                 self.ent = np.random.choice([a for a in range(SF-level_num) if a % level_num])  # self.ent_config[0]
                 #print(f'self.ent: {self.ent}')
+                soc, fl = soc_and_fl(self.ent)
+                charge_time = (fast_charge*fast_cs_num+charge*(cs_num-fast_cs_num))/cs_num
+                time = int((100-soc)*charge_time + (100-fl)*fuel)+self.ts[0]
+                self.ex_time.append(time)
+                #print(max(self.ex_time))
             del self.ent_config[0]
         else:
             if 0 in self.ent_config and self.td[0]:
@@ -193,10 +198,10 @@ def delay_update(self):
             self.td[0] += 1
     for idx, cs in enumerate(self.cs):
         if cs > SF-level_num and cs != SF:
-            if 0 not in self.av[cs_num:] or not self.av_emp or self.emp_tt[idx] or (idx % 2 and idx < interlock and self.av[idx - 1]):
+            if not self.emp_tt[idx] and (0 not in self.av[cs_num:] or not self.av_emp or (idx % 2 and idx < interlock and self.av[idx - 1])):
                 self.td[idx + 1] += 1
     for idx, fs in enumerate(self.fs):
-        if fs % level_num == 0 and fs != 0 and (0 not in self.av[:cs_num] or not self.av_emp or self.emp_tt[idx+cs_num]):
+        if fs % level_num == 0 and fs != 0 and (0 not in self.av[:cs_num] or not self.av_emp):
             self.td[idx+1+cs_num] += 1
 
 

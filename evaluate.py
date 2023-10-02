@@ -57,6 +57,7 @@ for it in range(it_num):
     rew = []
     seed = 1
     fail = 0
+    exceed_time = []
     fail_dict = {'waiting_limit_exceeded': 0, 'no_valid_action': 0, 'same_cs': 0, 'same_fs': 0, 'crash': 0,
                  'lock_crash': 0, 'stuck': 0, 'wrong_fs': 0, 'wrong_cs': 0}
     for episode in range(episodes):
@@ -82,13 +83,18 @@ for it in range(it_num):
             if terminated or truncated:
                 #print(tot_rew)
                 rew.append(tot_rew)
-                rew_diff.append(reward-tot_rew)
+                rew_diff.append((reward-tot_rew)/params['min_to_ts'])
                 if truncated:
                     episodes_up -= 1
                 if reward < 0:
+                    if params['check_mask']:
+                        print('try again')
+                        exceed_time.append(info.get("exceeded time") / params['min_to_ts'])
                     fail += 1
                     fail_dict[info.get('info')] += 1
                     fail_list[episode] += 1
+                else:
+                    exceed_time.append(info.get("exceeded time")/params['min_to_ts'])
                 tot_rew = 0
                 act_number.append(number)
                 #print(f'number: {number}')
@@ -97,10 +103,11 @@ for it in range(it_num):
                 break
     mean_rew = mean(rew)
     mean_pun = mean(rew_diff)
+    mean_ex = mean(exceed_time)
     mean_number = mean(act_number)
     mean_pun_list.append(mean_pun)
     fail_percent.append(fail*100/episodes)
-    print(f'mean rew: {mean_rew}\navg time steps waited: {mean_pun}\nnumber of fails: {fail}/{episodes_up}\nfails: {fail_dict}',
+    print(f'mean rew: {mean_rew}\navg time steps waited: {mean_pun}\navg exceed time: {mean_ex}\nnumber of fails: {fail}/{episodes_up}\nfails: {fail_dict}',
           f'mean number: {mean_number}')
     print(f"Time spent : {time.time() - t:.2f}s")
 
@@ -109,11 +116,11 @@ for it in range(it_num):
         seeds = list(range(1, seed))
         plt.subplot(211)
         plt.plot(seeds, rew_diff, 'y')
-        plt.ylabel('time steps waited')
+        plt.ylabel('total waiting time')
         plt.subplot(212)
-        plt.plot(seeds, act_number, 'b')
-        plt.ylabel('number of actions')
-        plt.xlabel('seeds')
+        plt.plot(seeds, exceed_time, 'b')
+        plt.ylabel('time after arrival')
+        plt.xlabel('episodes')
         plt.suptitle(name)
         fig = plt.gcf()
         filepath1 = os.path.join(output_dir, filename1)
@@ -143,4 +150,4 @@ if params['save_graph']:
 if params['show_graph']:
     plt.show()
 
-print(f'fail list: {fail_list}\nargs: {np.argwhere(fail_list==it_num) or np.argmax(fail_list)}')
+# print(f'fail list: {fail_list}\nargs: {np.argwhere(fail_list==it_num) or np.argmax(fail_list)}')

@@ -101,8 +101,8 @@ python check_env.py
 - **sb3-contrib**: Additional algorithms (Masked PPO)
 - **numpy**: Numerical computing
 - **PyYAML**: Configuration file parsing
-- **matplotlib**: Visualization
-- **pygame**: Rendering
+- **matplotlib**: Results visualization
+- **pygame**: Environment visualization
 - **tensorboard**: Training visualization
 
 ## Results
